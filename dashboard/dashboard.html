@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bảng Quản Lý Từ Vựng Tiếng Anh | English Vocabulary Dashboard</title>
+  <link rel="stylesheet" href="dashboard.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+  <!-- Header Bar -->
+  <header class="app-header">
+    <div class="header-container">
+      <div class="brand">
+        <div class="logo-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z"></path>
+            <path d="M6 6h10"></path>
+            <path d="M6 10h10"></path>
+          </svg>
+        </div>
+        <div class="brand-text">
+          <h1>English Vocab Hub</h1>
+          <p>Quản lý & Học từ vựng trên trình duyệt</p>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        <button id="btn-add-modal" class="btn btn-primary">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="12" y1="5" x2="12" y2="19"></line>
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+          </svg>
+          <span>Thêm từ mới</span>
+        </button>
+        <button id="btn-export-json" class="btn btn-secondary" title="Xuất dữ liệu ra file JSON">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="7 10 12 15 17 10"></polyline>
+            <line x1="12" y1="15" x2="12" y2="3"></line>
+          </svg>
+          <span>Xuất JSON</span>
+        </button>
+        <button id="btn-import-json-trigger" class="btn btn-secondary" title="Nhập dữ liệu từ file JSON">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="17 8 12 3 7 8"></polyline>
+            <line x1="12" y1="3" x2="12" y2="15"></line>
+          </svg>
+          <span>Nhập JSON</span>
+        </button>
+        <input type="file" id="input-import-file" accept=".json" style="display: none;">
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="main-content">
+    <!-- Stat Cards -->
+    <section class="stats-grid">
+      <div class="stat-box">
+        <div class="stat-icon icon-total">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="3" width="7" height="7"></rect>
+            <rect x="14" y="3" width="7" height="7"></rect>
+            <rect x="14" y="14" width="7" height="7"></rect>
+            <rect x="3" y="14" width="7" height="7"></rect>
+          </svg>
+        </div>
+        <div class="stat-info">
+          <span class="stat-title">Tổng số từ vựng</span>
+          <span class="stat-value" id="count-total">0</span>
+        </div>
+      </div>
+
+      <div class="stat-box">
+        <div class="stat-icon icon-learning">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"></circle>
+            <polyline points="12 6 12 12 16 14"></polyline>
+          </svg>
+        </div>
+        <div class="stat-info">
+          <span class="stat-title">Từ đang học</span>
+          <span class="stat-value text-amber" id="count-learning">0</span>
+        </div>
+      </div>
+
+      <div class="stat-box">
+        <div class="stat-icon icon-mastered">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+            <polyline points="22 4 12 14.01 9 11.01"></polyline>
+          </svg>
+        </div>
+        <div class="stat-info">
+          <span class="stat-title">Từ đã thuộc</span>
+          <span class="stat-value text-emerald" id="count-mastered">0</span>
+        </div>
+      </div>
+
+      <div class="stat-box">
+        <div class="stat-icon icon-rate">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M18 20V10"></path>
+            <path d="M12 20V4"></path>
+            <path d="M6 20v-6"></path>
+          </svg>
+        </div>
+        <div class="stat-info">
+          <span class="stat-title">Tỷ lệ thuộc bài</span>
+          <span class="stat-value text-indigo" id="mastery-rate">0%</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Toolbar & Filter Bar -->
+    <section class="toolbar-section">
+      <div class="search-box">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="8"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+        <input type="text" id="search-input" placeholder="Tìm kiếm theo từ, nghĩa, câu ví dụ...">
+        <button id="btn-clear-search" class="btn-clear" style="display: none;">&times;</button>
+      </div>
+
+      <div class="filters-group">
+        <div class="filter-item">
+          <label for="filter-status">Trạng thái:</label>
+          <select id="filter-status" class="custom-select">
+            <option value="all">Tất cả từ vựng</option>
+            <option value="learning">Đang học</option>
+            <option value="mastered">Đã thuộc</option>
+          </select>
+        </div>
+
+        <div class="filter-item">
+          <label for="sort-order">Sắp xếp:</label>
+          <select id="sort-order" class="custom-select">
+            <option value="newest">Mới thêm nhất</option>
+            <option value="oldest">Cũ nhất</option>
+            <option value="az">Từ vựng (A-Z)</option>
+            <option value="za">Từ vựng (Z-A)</option>
+          </select>
+        </div>
+      </div>
+    </section>
+
+    <!-- Batch Actions Bar -->
+    <section id="batch-actions-bar" class="batch-bar" style="display: none;">
+      <div class="batch-info">
+        <span>Đã chọn <strong id="selected-count">0</strong> từ</span>
+      </div>
+      <div class="batch-buttons">
+        <button id="btn-batch-learning" class="btn-sm btn-outline">
+          <span>Chuyển thành Đang học</span>
+        </button>
+        <button id="btn-batch-mastered" class="btn-sm btn-outline-success">
+          <span>Đánh dấu Đã thuộc</span>
+        </button>
+        <button id="btn-batch-delete" class="btn-sm btn-outline-danger">
+          <span>Xóa các từ đã chọn</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- Table Container -->
+    <section class="table-card">
+      <div class="table-responsive">
+        <table class="vocab-table">
+          <thead>
+            <tr>
+              <th width="40"><input type="checkbox" id="select-all-checkbox" title="Chọn tất cả"></th>
+              <th width="50">#</th>
+              <th width="200">Từ vựng</th>
+              <th width="140">Phiên âm</th>
+              <th width="220">Nghĩa tiếng Việt</th>
+              <th>Câu ngữ cảnh / Ví dụ</th>
+              <th width="120">Ngày lưu</th>
+              <th width="130">Trạng thái</th>
+              <th width="110" class="text-center">Thao tác</th>
+            </tr>
+          </thead>
+          <tbody id="vocab-table-body">
+            <!-- Render từ JS -->
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Empty State -->
+      <div id="table-empty-state" class="empty-container" style="display: none;">
+        <div class="empty-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+          </svg>
+        </div>
+        <h3 class="empty-title">Chưa có từ vựng nào</h3>
+        <p class="empty-desc">Bôi đen từ tiếng Anh trên bất kỳ trang web nào và click chuột phải chọn "Lưu từ vựng", hoặc nhấn "Thêm từ mới" ở trên.</p>
+      </div>
+
+      <!-- Pagination / Footer info -->
+      <div class="table-footer">
+        <div class="footer-info">
+          Hiển thị <span id="displayed-count">0</span> / <span id="total-table-count">0</span> từ vựng
+        </div>
+        <div class="footer-hint">
+          💡 <em>Mẹo: Double-click vào ô <strong>Nghĩa tiếng Việt</strong> hoặc <strong>Câu ngữ cảnh</strong> để sửa trực tiếp!</em>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Modal: Thêm / Chỉnh sửa từ vựng -->
+  <div id="vocab-modal" class="modal-backdrop" style="display: none;">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h2 id="modal-title">Thêm từ vựng mới</h2>
+        <button id="modal-btn-close" class="btn-close">&times;</button>
+      </div>
+      <form id="vocab-form" class="modal-form">
+        <input type="hidden" id="form-vocab-id">
+
+        <div class="form-row">
+          <div class="form-group flex-1">
+            <label for="form-word">Từ tiếng Anh <span class="required">*</span></label>
+            <div class="input-with-action">
+              <input type="text" id="form-word" required placeholder="Ví dụ: resilience, eloquent...">
+              <button type="button" id="btn-fetch-dict" class="btn-fetch" title="Tự động tra từ điển">
+                <span>Tra từ điển</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="form-group flex-1">
+            <label for="form-phonetic">Phiên âm (IPA)</label>
+            <input type="text" id="form-phonetic" placeholder="Ví dụ: /rɪˈzɪl.jəns/">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="form-vietnamese">Nghĩa tiếng Việt <span class="required">*</span></label>
+          <input type="text" id="form-vietnamese" required placeholder="Ví dụ: Sự kiên cường, khả năng phục hồi nhanh...">
+        </div>
+
+        <div class="form-group">
+          <label for="form-english">Định nghĩa tiếng Anh (Tùy chọn)</label>
+          <input type="text" id="form-english" placeholder="Ví dụ: the capacity to recover quickly from difficulties">
+        </div>
+
+        <div class="form-group">
+          <label for="form-context">Câu ngữ cảnh / Ví dụ</label>
+          <textarea id="form-context" rows="3" placeholder="Nhập câu ví dụ thực tế sử dụng từ này..."></textarea>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group flex-1">
+            <label for="form-status">Trạng thái học</label>
+            <select id="form-status" class="custom-select full-width">
+              <option value="learning">Đang học</option>
+              <option value="mastered">Đã thuộc</option>
+            </select>
+          </div>
+
+          <div class="form-group flex-1">
+            <label for="form-audio">Audio phát âm URL (Tùy chọn)</label>
+            <input type="url" id="form-audio" placeholder="https://api.dictionaryapi.dev/media/...">
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" id="btn-modal-cancel" class="btn btn-secondary">Hủy bỏ</button>
+          <button type="submit" id="btn-modal-save" class="btn btn-primary">Lưu từ vựng</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Tùy chọn Nhập file JSON -->
+  <div id="import-modal" class="modal-backdrop" style="display: none;">
+    <div class="modal-box modal-sm">
+      <div class="modal-header">
+        <h2>Nhập dữ liệu từ file JSON</h2>
+        <button id="import-btn-close" class="btn-close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p class="import-preview-text">Phát hiện file chứa <strong id="import-file-count">0</strong> từ vựng.</p>
+        <p class="import-desc">Bạn muốn xử lý dữ liệu như thế nào?</p>
+        <div class="import-options">
+          <label class="radio-option">
+            <input type="radio" name="import-mode" value="merge" checked>
+            <div class="radio-content">
+              <strong>Gộp thêm (Khuyên dùng)</strong>
+              <span>Giữ nguyên từ hiện có, thêm từ mới và cập nhật các từ trùng.</span>
+            </div>
+          </label>
+          <label class="radio-option">
+            <input type="radio" name="import-mode" value="overwrite">
+            <div class="radio-content">
+              <strong>Ghi đè hoàn toàn</strong>
+              <span>Xóa toàn bộ từ vựng hiện tại và thay thế bằng file JSON này.</span>
+            </div>
+          </label>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" id="btn-import-cancel" class="btn btn-secondary">Hủy</button>
+        <button type="button" id="btn-import-confirm" class="btn btn-primary">Bắt đầu nhập</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div id="toast-container" class="toast-container"></div>
+
+  <script src="dashboard.js"></script>
+</body>
+</html>

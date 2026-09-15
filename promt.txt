@@ -1,0 +1,84 @@
+# Title : Extension English cho Chrome/Brave
+# Mục tiêu : Tạo 1 extensive cho phép lưu các từ tiếng anh trên trình duyệt khi user highlight từ đó và ấn chuột phải . 
+# Các yêu cầu : 
+- Lưu data từ vựng vào file json
+- Có thể view dưới dạng bảng trên trình duyệt để view các từ đã lưu và có thể cập nhập trên trình duyệt luôn 
+
+# Kế hoạch Triển khai: English Vocabulary Saver Extension (Chrome / Brave)
+
+Tạo Chrome Extension (Manifest V3) cho phép người dùng bôi đen từ vựng tiếng Anh trên bất kỳ trang web nào, click chuột phải để lưu từ vựng, tự động tra cứu/lưu trữ, và quản lý danh sách từ qua bảng giao diện trên trình duyệt (hỗ trợ chỉnh sửa trực tiếp, tìm kiếm, phát âm, xuất/nhập file JSON).
+
+---
+
+## 1. Yêu cầu & Kiến trúc
+
+Dựa trên file [promt.txt](file:///b:/Workspace/eng-extension/promt.txt):
+1. **Highlight & Chuột phải**: Bôi đen từ/cụm từ trên trang web, click chuột phải -> chọn "Lưu từ vựng này".
+2. **Lưu dữ liệu JSON**: Lưu trữ dữ liệu từ vựng theo định dạng JSON trong `chrome.storage.local`, cung cấp tính năng Xuất (Export) ra file `.json` và Nhập (Import) từ file `.json`.
+3. **Xem dạng bảng & Cập nhật trực tiếp**:
+   - Giao diện Dashboard quản lý dạng bảng (Table view) trực quan, hiện đại.
+   - Cho phép chỉnh sửa trực tiếp (Inline edit hoặc Modal) các trường: Từ vựng, Nghĩa tiếng Việt, Phiên âm, Ví dụ, Trạng thái (Đang học / Đã thuộc).
+   - Tự động cập nhật ngay trên giao diện và lưu vào bộ nhớ.
+
+---
+
+## 2. Cấu trúc thư mục Extension
+
+Extension được tổ chức gọn gàng ngay tại thư mục workspace để người dùng có thể trực tiếp chọn "Load unpacked" trên Chrome/Brave:
+
+```
+b:\Workspace\eng-extension\
+├── manifest.json            # Cấu hình Manifest V3 cho Chrome & Brave
+├── background.js            # Service worker: Đăng ký context menu, xử lý lưu từ, thông báo
+├── content.js               # Content script: Bắt ngữ cảnh câu chứa từ được bôi đen
+├── popup/
+│   ├── popup.html           # Cửa sổ popup nhỏ khi click vào icon extension
+│   ├── popup.css            # Style popup hiện đại
+│   └── popup.js             # Logic popup: thống kê nhanh, tra từ nhanh, nút mở Dashboard
+├── dashboard/
+│   ├── dashboard.html       # Trang quản lý từ vựng chính (bảng, tìm kiếm, bộ lọc)
+│   ├── dashboard.css        # Giao diện Glassmorphism / Slate Dark & Light hiện đại
+│   └── dashboard.js         # Logic bảng: CRUD từ vựng, phát âm, xuất/nhập JSON
+├── icons/                   # Bộ icon 16x16, 48x48, 128x128
+└── README.md                # Hướng dẫn chi tiết cách load extension lên Chrome/Brave
+```
+
+---
+
+## 3. Các tính năng chính
+
+### A. Context Menu (Chuột phải)
+- Tạo menu item: `Lưu từ vựng: "%s"`.
+- Khi bấm:
+  - Lấy từ được chọn + ngữ cảnh câu xung quanh (thông qua message từ content script hoặc selection).
+  - Tự động gọi Free Dictionary API để lấy phiên âm IPA và định nghĩa tiếng Anh mẫu (nếu có mạng, xử lý fallback nếu offline).
+  - Lưu vào `chrome.storage.local`.
+  - Hiển thị badge hoặc Chrome Notification báo lưu thành công.
+
+### B. Dashboard Quản lý (Table View)
+- Bảng hiển thị đẹp mắt:
+  - Cột: STT | Từ vựng | Phiên âm | Nghĩa tiếng Việt | Câu ví dụ / Ngữ cảnh | Ngày thêm | Trạng thái | Thao tác.
+- Chức năng tương tác:
+  - **Phát âm**: Bấm icon loa để nghe phát âm chuẩn bằng Web Speech API.
+  - **Chỉnh sửa trực tiếp**: Nhấn nút Sửa hoặc double click vào ô để sửa nghĩa, ví dụ, trạng thái và lưu ngay lập tức.
+  - **Thêm từ mới thủ công**: Form thêm từ nhanh ngay trên Dashboard.
+  - **Xóa**: Xóa từng từ hoặc xóa hàng loạt.
+  - **Tìm kiếm & Lọc**: Tìm theo từ, nghĩa; lọc theo trạng thái (Đang học, Đã nhớ); sắp xếp theo ngày/A-Z.
+  - **Thống kê**: Thẻ đếm tổng số từ, số từ đang học, số từ đã thuộc.
+
+### C. Quản lý File JSON (Export / Import)
+- **Xuất JSON (Export)**: Tải về file `vocabulary_data.json` chứa toàn bộ dữ liệu đã lưu.
+- **Nhập JSON (Import)**: Tải lên file JSON để khôi phục hoặc đồng bộ từ máy khác (hỗ trợ chế độ Gộp thêm hoặc Ghi đè).
+
+---
+
+## 4. Kế hoạch xác minh (Verification Plan)
+
+### Automated / Syntax Check
+- Kiểm tra cú pháp JavaScript và tính hợp lệ của `manifest.json`.
+- Đảm bảo không có lỗi CSP (Content Security Policy) trong Manifest V3.
+
+### Manual Verification
+- Hướng dẫn người dùng các bước mở `chrome://extensions` hoặc `brave://extensions`.
+- Bật Developer Mode -> Chọn "Load unpacked" -> Chọn thư mục `b:\Workspace\eng-extension`.
+- Kiểm tra bôi đen từ trên web -> chuột phải lưu -> mở bảng kiểm tra từ và sửa đổi.

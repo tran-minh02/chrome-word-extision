@@ -1,0 +1,73 @@
+{
+  "app": "English Vocabulary Saver",
+  "version": "1.0.0",
+  "exportDate": "2026-09-14T12:00:00.000Z",
+  "total": 5,
+  "vocabularies": [
+    {
+      "id": "vocab_sample_1",
+      "word": "resilience",
+      "phonetic": "/rɪˈzɪl.jəns/",
+      "vietnameseMeaning": "Khả năng phục hồi, sự kiên cường",
+      "englishMeaning": "the capacity to withstand or to recover quickly from difficulties; toughness",
+      "contextSentence": "The team showed great resilience in overcoming adversity during the final sprint.",
+      "status": "learning",
+      "audioUrl": "https://api.dictionaryapi.dev/media/pronunciations/en/resilience-us.mp3",
+      "dateAdded": "2026-09-14T08:30:00.000Z",
+      "sourceUrl": "https://en.wikipedia.org",
+      "sourceTitle": "Wikipedia"
+    },
+    {
+      "id": "vocab_sample_2",
+      "word": "eloquent",
+      "phonetic": "/ˈel.ə.kwənt/",
+      "vietnameseMeaning": "Hùng hồn, lưu loát, truyền cảm",
+      "englishMeaning": "fluent or persuasive in speaking or writing",
+      "contextSentence": "She gave an eloquent speech that moved everyone in the audience.",
+      "status": "learning",
+      "audioUrl": "https://api.dictionaryapi.dev/media/pronunciations/en/eloquent-us.mp3",
+      "dateAdded": "2026-09-14T09:15:00.000Z",
+      "sourceUrl": "https://bbc.com",
+      "sourceTitle": "BBC News"
+    },
+    {
+      "id": "vocab_sample_3",
+      "word": "serendipity",
+      "phonetic": "/ˌser.ənˈdɪp.ə.t̬i/",
+      "vietnameseMeaning": "Sự tình cờ may mắn",
+      "englishMeaning": "the occurrence and development of events by chance in a happy or beneficial way",
+      "contextSentence": "Finding this cozy bookstore in the quiet alley was pure serendipity.",
+      "status": "mastered",
+      "audioUrl": "https://api.dictionaryapi.dev/media/pronunciations/en/serendipity-us.mp3",
+      "dateAdded": "2026-09-14T10:00:00.000Z",
+      "sourceUrl": "https://medium.com",
+      "sourceTitle": "Medium Article"
+    },
+    {
+      "id": "vocab_sample_4",
+      "word": "perseverance",
+      "phonetic": "/ˌpɝː.səˈvɪr.əns/",
+      "vietnameseMeaning": "Sự kiên trì, bền bỉ",
+      "englishMeaning": "persistence in doing something despite difficulty or delay in achieving success",
+      "contextSentence": "Through hard work and perseverance, he achieved his dream of becoming a software architect.",
+      "status": "mastered",
+      "audioUrl": "https://api.dictionaryapi.dev/media/pronunciations/en/perseverance-us.mp3",
+      "dateAdded": "2026-09-14T11:20:00.000Z",
+      "sourceUrl": "https://techcrunch.com",
+      "sourceTitle": "TechCrunch"
+    },
+    {
+      "id": "vocab_sample_5",
+      "word": "ubiquitous",
+      "phonetic": "/juːˈbɪk.wə.t̬əs/",
+      "vietnameseMeaning": "Phổ biến khắp nơi, có mặt ở mọi nơi",
+      "englishMeaning": "present, appearing, or found everywhere",
+      "contextSentence": "Smartphones have become ubiquitous in modern daily life.",
+      "status": "learning",
+      "audioUrl": "https://api.dictionaryapi.dev/media/pronunciations/en/ubiquitous-us.mp3",
+      "dateAdded": "2026-09-14T12:00:00.000Z",
+      "sourceUrl": "https://theverge.com",
+      "sourceTitle": "The Verge"
+    }
+  ]
+}
