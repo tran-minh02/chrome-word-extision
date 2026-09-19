@@ -160,9 +160,10 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
     );
 
     if (existingIndex !== -1) {
-      // Từ đã tồn tại -> cập nhật lại câu ngữ cảnh và ngày xem
+      const now = new Date().toISOString();
       vocabularies[existingIndex].contextSentence = contextSentence || vocabularies[existingIndex].contextSentence;
-      vocabularies[existingIndex].lastReviewed = new Date().toISOString();
+      vocabularies[existingIndex].lastReviewed = now;
+      vocabularies[existingIndex].updatedAt = now;
       await chrome.storage.local.set({ vocabularies });
 
       chrome.notifications.create({
@@ -177,6 +178,7 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
 
     // TẠO VÀ LƯU NGAY LẬP TỨC (Không chờ API mạng - phản hồi 0ms)
     const newEntryId = "vocab_" + Date.now() + "_" + Math.random().toString(36).substring(2, 8);
+    const now = new Date().toISOString();
     const newEntry = {
       id: newEntryId,
       word: selectedText,
@@ -188,7 +190,8 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
       contextSentence: contextSentence || selectedText,
       sourceUrl: tab?.url || "",
       sourceTitle: tab?.title || (tab?.url?.endsWith('.pdf') ? "Tài liệu PDF" : "Web page"),
-      dateAdded: new Date().toISOString(),
+      dateAdded: now,
+      updatedAt: now,
       status: "learning",
       tags: []
     };
@@ -221,6 +224,7 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
         if (!currentList[itemIndex].contextSentence || currentList[itemIndex].contextSentence === selectedText) {
           if (details.example) currentList[itemIndex].contextSentence = `Example: ${details.example}`;
         }
+        currentList[itemIndex].updatedAt = new Date().toISOString();
         await chrome.storage.local.set({ vocabularies: currentList });
       }
     }).catch(err => console.warn("Lỗi background fetch details:", err));

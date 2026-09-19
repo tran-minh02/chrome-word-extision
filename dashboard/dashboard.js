@@ -166,6 +166,30 @@
     }
   }
 
+  // Ghi nhận bản ghi đã xóa (Tombstone) và đồng bộ trực tiếp lên Cloud nếu đang đăng nhập
+  async function recordAndSyncDeletion(deletedItems) {
+    if (!deletedItems || deletedItems.length === 0) return;
+
+    const newTombstones = deletedItems.map(item => ({
+      id: item.id,
+      word: (item.word || '').toLowerCase(),
+      deletedAt: new Date().toISOString()
+    }));
+
+    try {
+      const { deleted_records = [] } = await chrome.storage.local.get(['deleted_records']);
+      const updated = [...deleted_records, ...newTombstones].slice(-300);
+      await chrome.storage.local.set({ deleted_records: updated });
+
+      // Nếu đang đăng nhập, thực hiện xóa ngay trên Supabase
+      if (window.supabaseSync?.isLoggedIn && window.supabaseSync.isLoggedIn()) {
+        await window.supabaseSync.deleteWords(newTombstones);
+      }
+    } catch (err) {
+      console.warn('Lỗi khi đồng bộ xóa từ vựng lên Cloud:', err);
+    }
+  }
+
   // Bind Event Listeners
   function bindEvents() {
     // Search input
@@ -216,8 +240,12 @@
 
     // Batch Actions
     btnBatchLearning.addEventListener('click', async () => {
+      const now = new Date().toISOString();
       vocabularies.forEach(item => {
-        if (selectedIds.has(item.id)) item.status = 'learning';
+        if (selectedIds.has(item.id)) {
+          item.status = 'learning';
+          item.updatedAt = now;
+        }
       });
       selectedIds.clear();
       await saveVocabularies();
@@ -225,8 +253,12 @@
     });
 
     btnBatchMastered.addEventListener('click', async () => {
+      const now = new Date().toISOString();
       vocabularies.forEach(item => {
-        if (selectedIds.has(item.id)) item.status = 'mastered';
+        if (selectedIds.has(item.id)) {
+          item.status = 'mastered';
+          item.updatedAt = now;
+        }
       });
       selectedIds.clear();
       await saveVocabularies();
@@ -235,10 +267,15 @@
 
     btnBatchDelete.addEventListener('click', async () => {
       if (!confirm(`Bạn có chắc chắn muốn xóa ${selectedIds.size} từ vựng đã chọn không?`)) return;
+      const itemsToDelete = vocabularies.filter(item => selectedIds.has(item.id));
       vocabularies = vocabularies.filter(item => !selectedIds.has(item.id));
       selectedIds.clear();
       await saveVocabularies();
-      showToast('Đã xóa các từ vựng đã chọn thành công.');
+
+      // Đồng bộ xóa lên Cloud và lưu tombstone
+      await recordAndSyncDeletion(itemsToDelete);
+
+      showToast('Đã xóa các từ vựng đã chọn khỏi thiết bị và đám mây Cloud.');
     });
 
     // Add Word Modal
@@ -428,6 +465,15 @@
       }
       showToast('Đăng nhập thành công!');
       updateCloudModalUI();
+
+      // Tự động gộp (append) từ vựng local vào tài khoản cloud
+      try {
+        vocabularies = await window.supabaseSync.sync(vocabularies);
+        await saveVocabularies();
+        showToast('Đã tự động gộp và đồng bộ từ vựng vào tài khoản!');
+      } catch (syncErr) {
+        console.warn('Lỗi tự động đồng bộ khi đăng nhập:', syncErr);
+      }
     } catch (err) {
       showToast(err.message, 'error');
     } finally {
@@ -452,6 +498,15 @@
       cloudLoginOtp.value = '';
       pendingLoginFactorId = null;
       updateCloudModalUI();
+
+      // Tự động gộp (append) từ vựng local vào tài khoản cloud
+      try {
+        vocabularies = await window.supabaseSync.sync(vocabularies);
+        await saveVocabularies();
+        showToast('Đã tự động gộp và đồng bộ từ vựng vào tài khoản!');
+      } catch (syncErr) {
+        console.warn('Lỗi tự động đồng bộ khi đăng nhập OTP:', syncErr);
+      }
     } catch (err) {
       showToast(err.message, 'error');
     } finally {
@@ -490,9 +545,18 @@
     btnCloudSyncNow.disabled = true;
     btnCloudSyncNow.textContent = 'Đang đồng bộ...';
     try {
-      vocabularies = await window.supabaseSync.sync(vocabularies);
+      const merged = await window.supabaseSync.sync(vocabularies);
+      vocabularies = merged;
       await saveVocabularies();
-      showToast('Đồng bộ từ vựng với đám mây thành công!');
+
+      const up = merged.uploadedCount || 0;
+      const down = merged.downloadedCount || 0;
+      const del = merged.deletedCount || 0;
+      let msg = 'Đồng bộ từ vựng với đám mây thành công!';
+      if (up > 0 || down > 0 || del > 0) {
+        msg = `Đồng bộ thành công! (Tải lên: ${up}, Tải xuống: ${down}, Đã xóa: ${del})`;
+      }
+      showToast(msg);
     } catch (err) {
       showToast(err.message, 'error');
     } finally {
@@ -636,6 +700,21 @@
           <td>
             <div class="cell-word-box">
               <span class="word-text">${escapeHtml(item.word)}</span>
+              ${item.syncedWithCloud 
+                ? `<span class="sync-status-indicator sync-cloud" title="Đã đồng bộ với Cloud">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M20 16.2A4.5 4.5 0 0 0 17.5 8h-1.8A7 7 0 1 0 4 14.9"></path>
+                      <polyline points="9 15 12 18 16 13"></polyline>
+                    </svg>
+                   </span>`
+                : `<span class="sync-status-indicator sync-local" title="Dữ liệu cục bộ (Chưa đồng bộ lên Cloud)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M20 16.2A4.5 4.5 0 0 0 17.5 8h-1.8A7 7 0 1 0 4 14.9"></path>
+                      <line x1="12" y1="12" x2="12" y2="18"></line>
+                      <polyline points="9 15 12 12 15 15"></polyline>
+                    </svg>
+                   </span>`
+              }
               <button class="btn-speak-inline" title="Phát âm" data-word="${escapeHtml(item.word)}" data-audio="${escapeHtml(item.audioUrl || '')}">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
@@ -733,6 +812,7 @@
         const item = vocabularies.find(v => v.id === id);
         if (item) {
           item.status = newStatus;
+          item.updatedAt = new Date().toISOString();
           await saveVocabularies();
           showToast(`Đã chuyển "${item.word}" sang ${newStatus === 'mastered' ? 'Đã thuộc' : 'Đang học'}.`);
         }
@@ -760,7 +840,11 @@
           vocabularies = vocabularies.filter(v => v.id !== id);
           selectedIds.delete(id);
           await saveVocabularies();
-          showToast(`Đã xóa từ "${item.word}".`);
+
+          // Đồng bộ xóa lên Cloud và lưu tombstone
+          await recordAndSyncDeletion([item]);
+
+          showToast(`Đã xóa từ "${item.word}" khỏi thiết bị và đám mây Cloud.`);
         }
       });
     });
@@ -798,9 +882,14 @@
 
     async function commit() {
       const newValue = input.value.trim();
-      item[field] = newValue;
-      await saveVocabularies();
-      showToast('Đã cập nhật từ vựng.');
+      if (item[field] !== newValue) {
+        item[field] = newValue;
+        item.updatedAt = new Date().toISOString();
+        await saveVocabularies();
+        showToast('Đã cập nhật từ vựng.');
+      } else {
+        renderTable();
+      }
     }
 
     function cancel() {
@@ -897,6 +986,7 @@
       // Edit existing
       const index = vocabularies.findIndex(v => v.id === id);
       if (index !== -1) {
+        const now = new Date().toISOString();
         vocabularies[index] = {
           ...vocabularies[index],
           word,
@@ -906,12 +996,14 @@
           contextSentence,
           status,
           audioUrl,
-          lastReviewed: new Date().toISOString()
+          lastReviewed: now,
+          updatedAt: now
         };
         showToast(`Đã cập nhật từ "${word}".`);
       }
     } else {
       // Add new
+      const now = new Date().toISOString();
       const newEntry = {
         id: "vocab_" + Date.now() + "_" + Math.random().toString(36).substring(2, 8),
         word,
@@ -921,7 +1013,8 @@
         contextSentence,
         status,
         audioUrl,
-        dateAdded: new Date().toISOString(),
+        dateAdded: now,
+        updatedAt: now,
         sourceUrl: '',
         sourceTitle: 'Thêm thủ công',
         tags: []
@@ -1143,7 +1236,8 @@
             phonetic: normalized.phonetic || existing.phonetic,
             audioUrl: normalized.audioUrl || existing.audioUrl,
             contextSentence: normalized.contextSentence || existing.contextSentence,
-            englishMeaning: normalized.englishMeaning || existing.englishMeaning
+            englishMeaning: normalized.englishMeaning || existing.englishMeaning,
+            updatedAt: new Date().toISOString()
           });
         } else {
           map.set(key, normalized);
@@ -1160,6 +1254,7 @@
   }
 
   function normalizeImportItem(item) {
+    const now = new Date().toISOString();
     return {
       id: item.id || ("vocab_" + Date.now() + "_" + Math.random().toString(36).substring(2, 8)),
       word: item.word ? item.word.trim() : "",
@@ -1169,7 +1264,8 @@
       contextSentence: item.contextSentence || "",
       status: item.status === 'mastered' ? 'mastered' : 'learning',
       audioUrl: item.audioUrl || "",
-      dateAdded: item.dateAdded || new Date().toISOString(),
+      dateAdded: item.dateAdded || now,
+      updatedAt: item.updatedAt || item.dateAdded || now,
       sourceUrl: item.sourceUrl || "",
       sourceTitle: item.sourceTitle || "",
       tags: Array.isArray(item.tags) ? item.tags : []

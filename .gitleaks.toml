@@ -1,0 +1,16 @@
+# Gitleaks Configuration
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Cho phép các key công khai và thư mục test"
+paths = [
+  '''testcase/.*''',
+  '''docs/.*''',
+  '''\.agents/.*''',
+  '''\.git/.*'''
+]
+regexes = [
+  # Supabase public/publishable anon key (dùng cho client)
+  '''sb_publishable_[a-zA-Z0-9_\-]+'''
+]
