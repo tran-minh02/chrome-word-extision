@@ -51,6 +51,12 @@
           </svg>
           <span>Nhập JSON</span>
         </button>
+        <button id="btn-cloud-sync-trigger" class="btn btn-secondary" title="Đồng bộ Cloud Supabase">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"></path>
+          </svg>
+          <span id="cloud-sync-text">Đồng bộ Cloud</span>
+        </button>
         <input type="file" id="input-import-file" accept=".json" style="display: none;">
       </div>
     </div>
@@ -312,9 +318,87 @@
     </div>
   </div>
 
+  <!-- Modal: Đồng bộ Cloud (Supabase) -->
+  <div id="cloud-modal" class="modal-backdrop" style="display: none;">
+    <div class="modal-box modal-sm">
+      <div class="modal-header">
+        <h2>Đồng bộ Đám mây (Supabase)</h2>
+        <button id="cloud-btn-close" class="btn-close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div id="cloud-auth-logged-out">
+          <div id="cloud-login-fields">
+            <div style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px;">
+              <input type="email" id="cloud-email" placeholder="Email đăng nhập..." class="custom-select" style="width: 100%;">
+              <input type="password" id="cloud-password" placeholder="Mật khẩu..." class="custom-select" style="width: 100%;">
+            </div>
+            <div style="display: flex; gap: 8px;">
+              <button type="button" id="btn-cloud-login" class="btn btn-primary" style="flex: 1;">Đăng nhập</button>
+              <button type="button" id="btn-cloud-register" class="btn btn-secondary" style="flex: 1;">Đăng ký</button>
+            </div>
+          </div>
+
+          <!-- Bước 2: Nhập OTP khi tài khoản đã bật 2FA -->
+          <div id="cloud-login-mfa-step" style="display: none; text-align: center; padding: 4px 0;">
+            <p style="font-size: 13.5px; font-weight: 600; margin-bottom: 4px; color: #a5b4fc;">Xác thực 2 bước (2FA)</p>
+            <p style="font-size: 11.5px; color: var(--text-muted); margin-bottom: 12px;">Tài khoản này đã bật bảo mật 2 lớp. Hãy nhập mã 6 số từ ứng dụng Authenticator:</p>
+            <div style="display: flex; gap: 8px; margin-bottom: 10px;">
+              <input type="text" id="cloud-login-otp" placeholder="6 chữ số..." maxlength="6" class="custom-select" style="text-align: center; font-size: 16px; font-weight: 600; letter-spacing: 4px; flex: 1; height: 40px;">
+              <button type="button" id="btn-cloud-confirm-otp" class="btn btn-primary" style="height: 40px; padding: 0 16px;">Xác nhận</button>
+            </div>
+            <button type="button" id="btn-cloud-cancel-otp" style="background: none; border: none; color: var(--text-muted); font-size: 11.5px; cursor: pointer; text-decoration: underline;">Quay lại đăng nhập</button>
+          </div>
+        </div>
+
+        <div id="cloud-auth-logged-in" style="display: none;">
+          <p style="margin-bottom: 12px; font-size: 13px;">Tài khoản: <strong id="cloud-user-email"></strong></p>
+          <div style="display: flex; flex-direction: column; gap: 8px;">
+            <button type="button" id="btn-cloud-sync-now" class="btn btn-primary" style="justify-content: center;">
+              <span>Đồng bộ dữ liệu ngay</span>
+            </button>
+            <button type="button" id="btn-cloud-setup-mfa" class="btn btn-secondary" style="justify-content: center;">
+              <span>Cài đặt bảo mật 2 lớp (Authenticator)</span>
+            </button>
+            <button type="button" id="btn-cloud-logout" class="btn btn-outline-danger" style="margin-top: 4px; justify-content: center;">
+              <span>Đăng xuất</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- 2FA Box -->
+        <div id="cloud-mfa-box" class="cloud-mfa-card" style="display: none;">
+          <p style="font-size: 13px; font-weight: 500; margin-bottom: 6px; color: var(--text-main);">Quét mã QR bằng ứng dụng Authenticator:</p>
+          <div class="qr-frame">
+            <div id="cloud-mfa-qr"></div>
+          </div>
+
+          <!-- Khóa bí mật nhập tay -->
+          <div id="cloud-mfa-secret-container" style="margin: 4px 0 14px 0;">
+            <span style="font-size: 11.5px; color: var(--text-muted); display: block; margin-bottom: 4px;">Hoặc nhập mã khóa bí mật này vào app:</span>
+            <div style="display: inline-flex; align-items: center; gap: 8px; background: #000000; padding: 6px 12px; border-radius: 6px; border: 1px dashed var(--border-light);">
+              <code id="cloud-mfa-secret" style="font-family: monospace; font-size: 13px; color: #38bdf8; letter-spacing: 2px; user-select: all; font-weight: 600;"></code>
+              <button type="button" id="btn-copy-secret" style="background:none; border:none; color:var(--text-muted); cursor:pointer; padding:2px;" title="Sao chép">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 14px; height: 14px; display: block;">
+                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <div style="display: flex; gap: 8px;">
+            <input type="text" id="cloud-mfa-code" placeholder="Mã 6 số từ app..." maxlength="6" class="custom-select" style="text-align: center; font-size: 16px; font-weight: 600; letter-spacing: 4px; flex: 1; height: 40px;">
+            <button type="button" id="btn-cloud-verify-mfa" class="btn btn-primary" style="height: 40px; padding: 0 18px;">Xác nhận</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Toast Notification Container -->
   <div id="toast-container" class="toast-container"></div>
 
+  <script src="sync.js"></script>
   <script src="dashboard.js"></script>
 </body>
 </html>

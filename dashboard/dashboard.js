@@ -62,9 +62,40 @@
   const btnImportCancel = document.getElementById('btn-import-cancel');
   const btnImportConfirm = document.getElementById('btn-import-confirm');
 
+  // Cloud Sync Elements
+  const btnCloudSyncTrigger = document.getElementById('btn-cloud-sync-trigger');
+  const cloudModal = document.getElementById('cloud-modal');
+  const cloudBtnClose = document.getElementById('cloud-btn-close');
+  const cloudEmail = document.getElementById('cloud-email');
+  const cloudPassword = document.getElementById('cloud-password');
+  const btnCloudLogin = document.getElementById('btn-cloud-login');
+  const btnCloudRegister = document.getElementById('btn-cloud-register');
+  const cloudAuthLoggedOut = document.getElementById('cloud-auth-logged-out');
+  const cloudAuthLoggedIn = document.getElementById('cloud-auth-logged-in');
+  const cloudUserEmail = document.getElementById('cloud-user-email');
+  const btnCloudSyncNow = document.getElementById('btn-cloud-sync-now');
+  const btnCloudSetupMfa = document.getElementById('btn-cloud-setup-mfa');
+  const btnCloudLogout = document.getElementById('btn-cloud-logout');
+  const cloudMfaBox = document.getElementById('cloud-mfa-box');
+  const cloudMfaQr = document.getElementById('cloud-mfa-qr');
+  const cloudMfaSecret = document.getElementById('cloud-mfa-secret');
+  const btnCopySecret = document.getElementById('btn-copy-secret');
+  const cloudMfaCode = document.getElementById('cloud-mfa-code');
+  const btnCloudVerifyMfa = document.getElementById('btn-cloud-verify-mfa');
+  let currentMfaFactorId = null;
+
+  // Login 2FA OTP Elements
+  const cloudLoginFields = document.getElementById('cloud-login-fields');
+  const cloudLoginMfaStep = document.getElementById('cloud-login-mfa-step');
+  const cloudLoginOtp = document.getElementById('cloud-login-otp');
+  const btnCloudConfirmOtp = document.getElementById('btn-cloud-confirm-otp');
+  const btnCloudCancelOtp = document.getElementById('btn-cloud-cancel-otp');
+  let pendingLoginFactorId = null;
+
   // Initialization
   document.addEventListener('DOMContentLoaded', async () => {
     await loadVocabularies();
+    if (window.supabaseSync) await window.supabaseSync.init();
     bindEvents();
   });
 
@@ -213,6 +244,220 @@
     importBtnClose.addEventListener('click', () => importModal.style.display = 'none');
     btnImportCancel.addEventListener('click', () => importModal.style.display = 'none');
     btnImportConfirm.addEventListener('click', handleExecuteImport);
+
+    // Cloud Sync Modal Triggers & Events
+    btnCloudSyncTrigger.addEventListener('click', openCloudModal);
+    cloudBtnClose.addEventListener('click', () => { cloudModal.style.display = 'none'; });
+    btnCloudLogin.addEventListener('click', handleCloudLogin);
+    btnCloudRegister.addEventListener('click', handleCloudRegister);
+    btnCloudLogout.addEventListener('click', handleCloudLogout);
+    btnCloudSyncNow.addEventListener('click', handleCloudSyncNow);
+    btnCloudSetupMfa.addEventListener('click', handleCloudSetupMfa);
+    btnCloudVerifyMfa.addEventListener('click', handleCloudVerifyMfa);
+    btnCloudConfirmOtp.addEventListener('click', handleCloudConfirmLoginOtp);
+    btnCloudCancelOtp.addEventListener('click', () => {
+      cloudLoginFields.style.display = 'block';
+      cloudLoginMfaStep.style.display = 'none';
+      cloudLoginOtp.value = '';
+      pendingLoginFactorId = null;
+    });
+    cloudLoginOtp.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        handleCloudConfirmLoginOtp();
+      }
+    });
+    btnCopySecret.addEventListener('click', () => {
+      const secret = cloudMfaSecret.textContent.trim();
+      if (secret) {
+        navigator.clipboard.writeText(secret).then(() => {
+          showToast('Đã sao chép mã khóa bí mật!');
+        });
+      }
+    });
+  }
+
+  // Cloud Modal UI & Actions
+  function openCloudModal() {
+    cloudModal.style.display = 'flex';
+    updateCloudModalUI();
+  }
+
+  function updateCloudModalUI() {
+    const session = window.supabaseSync.session;
+    let email = session?.user?.email;
+    if (!email && session?.access_token) {
+      try {
+        const payload = JSON.parse(atob(session.access_token.split('.')[1]));
+        email = payload.email || payload.sub;
+      } catch (_) {}
+    }
+
+    if (session?.access_token && email) {
+      cloudAuthLoggedOut.style.display = 'none';
+      cloudAuthLoggedIn.style.display = 'block';
+      cloudUserEmail.textContent = email;
+
+      // Kiểm tra trạng thái 2FA của tài khoản
+      const hasMFA = session?.user?.factors?.some(f => f.status === 'verified');
+      if (hasMFA) {
+        btnCloudSetupMfa.innerHTML = '<span>✓ Bảo mật 2 lớp (TOTP): Đã kích hoạt</span>';
+        btnCloudSetupMfa.style.color = '#34d399';
+        btnCloudSetupMfa.style.borderColor = 'rgba(16, 185, 129, 0.4)';
+      } else {
+        btnCloudSetupMfa.innerHTML = '<span>Cài đặt bảo mật 2 lớp (Authenticator)</span>';
+        btnCloudSetupMfa.style.color = '';
+        btnCloudSetupMfa.style.borderColor = '';
+      }
+    } else {
+      cloudAuthLoggedOut.style.display = 'block';
+      cloudAuthLoggedIn.style.display = 'none';
+      cloudMfaBox.style.display = 'none';
+      cloudLoginFields.style.display = 'block';
+      cloudLoginMfaStep.style.display = 'none';
+      cloudLoginOtp.value = '';
+      pendingLoginFactorId = null;
+    }
+  }
+
+  async function handleCloudLogin() {
+    const email = cloudEmail.value.trim();
+    const password = cloudPassword.value;
+    if (!email || !password) {
+      showToast('Vui lòng điền email và mật khẩu!', 'error');
+      return;
+    }
+    btnCloudLogin.disabled = true;
+    btnCloudLogin.textContent = 'Đang đăng nhập...';
+    try {
+      const res = await window.supabaseSync.signIn(email, password);
+      if (res && res.needsMFA) {
+        pendingLoginFactorId = res.factorId;
+        cloudLoginFields.style.display = 'none';
+        cloudLoginMfaStep.style.display = 'block';
+        cloudLoginOtp.value = '';
+        cloudLoginOtp.focus();
+        showToast('Tài khoản đã bật 2FA. Vui lòng nhập mã 6 số!');
+        return;
+      }
+      showToast('Đăng nhập thành công!');
+      updateCloudModalUI();
+    } catch (err) {
+      showToast(err.message, 'error');
+    } finally {
+      btnCloudLogin.disabled = false;
+      btnCloudLogin.textContent = 'Đăng nhập';
+    }
+  }
+
+  async function handleCloudConfirmLoginOtp() {
+    const code = cloudLoginOtp.value.trim();
+    if (!code || code.length !== 6 || !pendingLoginFactorId) {
+      showToast('Vui lòng nhập đủ 6 chữ số từ app Authenticator!', 'error');
+      return;
+    }
+    btnCloudConfirmOtp.disabled = true;
+    btnCloudConfirmOtp.textContent = 'Đang xác thực...';
+    try {
+      await window.supabaseSync.verifyMFA(pendingLoginFactorId, code);
+      showToast('Đăng nhập 2 lớp thành công!');
+      cloudLoginFields.style.display = 'block';
+      cloudLoginMfaStep.style.display = 'none';
+      cloudLoginOtp.value = '';
+      pendingLoginFactorId = null;
+      updateCloudModalUI();
+    } catch (err) {
+      showToast(err.message, 'error');
+    } finally {
+      btnCloudConfirmOtp.disabled = false;
+      btnCloudConfirmOtp.textContent = 'Xác nhận';
+    }
+  }
+
+  async function handleCloudRegister() {
+    const email = cloudEmail.value.trim();
+    const password = cloudPassword.value;
+    if (!email || !password) {
+      showToast('Vui lòng điền email và mật khẩu!', 'error');
+      return;
+    }
+    btnCloudRegister.disabled = true;
+    btnCloudRegister.textContent = 'Đang đăng ký...';
+    try {
+      await window.supabaseSync.signUp(email, password);
+      showToast('Đăng ký thành công! Kiểm tra email để xác thực nếu cần.');
+    } catch (err) {
+      showToast(err.message, 'error');
+    } finally {
+      btnCloudRegister.disabled = false;
+      btnCloudRegister.textContent = 'Đăng ký';
+    }
+  }
+
+  async function handleCloudLogout() {
+    await window.supabaseSync.signOut();
+    updateCloudModalUI();
+    showToast('Đã đăng xuất.');
+  }
+
+  async function handleCloudSyncNow() {
+    btnCloudSyncNow.disabled = true;
+    btnCloudSyncNow.textContent = 'Đang đồng bộ...';
+    try {
+      vocabularies = await window.supabaseSync.sync(vocabularies);
+      await saveVocabularies();
+      showToast('Đồng bộ từ vựng với đám mây thành công!');
+    } catch (err) {
+      showToast(err.message, 'error');
+    } finally {
+      btnCloudSyncNow.disabled = false;
+      btnCloudSyncNow.textContent = 'Đồng bộ dữ liệu ngay';
+    }
+  }
+
+  async function handleCloudSetupMfa() {
+    btnCloudSetupMfa.disabled = true;
+    btnCloudSetupMfa.textContent = 'Đang tạo mã...';
+    try {
+      const res = await window.supabaseSync.enrollMFA();
+      currentMfaFactorId = res.id;
+      if (res.totp?.qr_code) {
+        if (res.totp.qr_code.startsWith('data:image/')) {
+          cloudMfaQr.innerHTML = `<img src="${res.totp.qr_code}" alt="2FA QR Code">`;
+        } else {
+          cloudMfaQr.innerHTML = res.totp.qr_code;
+        }
+      }
+      if (res.totp?.secret) {
+        cloudMfaSecret.textContent = res.totp.secret;
+      }
+      cloudMfaBox.style.display = 'block';
+      showToast('Quét mã QR hoặc sao chép khóa bí mật vào app Authenticator.');
+    } catch (err) {
+      showToast(err.message, 'error');
+    } finally {
+      btnCloudSetupMfa.disabled = false;
+      btnCloudSetupMfa.textContent = 'Cài đặt bảo mật 2 lớp (Authenticator)';
+    }
+  }
+
+  async function handleCloudVerifyMfa() {
+    const code = cloudMfaCode.value.trim();
+    if (!code || code.length !== 6 || !currentMfaFactorId) {
+      showToast('Vui lòng nhập đủ 6 chữ số!', 'error');
+      return;
+    }
+    btnCloudVerifyMfa.disabled = true;
+    try {
+      await window.supabaseSync.verifyMFA(currentMfaFactorId, code);
+      showToast('Đã kích hoạt bảo mật 2 lớp thành công!');
+      cloudMfaBox.style.display = 'none';
+      cloudMfaCode.value = '';
+    } catch (err) {
+      showToast(err.message, 'error');
+    } finally {
+      btnCloudVerifyMfa.disabled = false;
+    }
   }
 
   // Filter & Sort Logic

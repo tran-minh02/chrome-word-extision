@@ -148,9 +148,17 @@ document.addEventListener('DOMContentLoaded', async () => {
             <span class="item-word">${escapeHtml(item.word)}</span>
             ${item.phonetic ? `<span class="item-phonetic">${escapeHtml(item.phonetic)}</span>` : ''}
           </div>
-          <span class="item-meaning">${escapeHtml(item.vietnameseMeaning || item.englishMeaning || 'Chưa có nghĩa')}</span>
+          <div class="item-meaning-wrap">
+            <span class="item-meaning" data-id="${item.id}" title="Nhấp vào đây để thêm hoặc sửa nhanh nghĩa/ghi chú">${escapeHtml(item.vietnameseMeaning || item.englishMeaning || 'Chưa có nghĩa (Click để thêm)')}</span>
+          </div>
         </div>
         <div class="item-actions">
+          <button class="item-btn btn-edit-note" title="Sửa nhanh ghi chú" data-id="${item.id}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 20h9"></path>
+              <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+            </svg>
+          </button>
           <button class="item-btn btn-speak" title="Phát âm" data-word="${escapeHtml(item.word)}" data-audio="${escapeHtml(item.audioUrl || '')}">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
@@ -166,6 +174,75 @@ document.addEventListener('DOMContentLoaded', async () => {
         </div>
       </div>
     `).join('');
+
+    // Inline edit handler
+    function startEditMeaning(id) {
+      const itemEl = recentList.querySelector(`.recent-item[data-id="${id}"]`);
+      if (!itemEl) return;
+      const wrap = itemEl.querySelector('.item-meaning-wrap');
+      if (!wrap || wrap.querySelector('input')) return;
+
+      const targetItem = recents.find(x => x.id === id);
+      const currentVal = targetItem?.vietnameseMeaning || '';
+
+      wrap.innerHTML = `
+        <div style="display:flex; gap:4px; align-items:center; width:100%; margin-top:2px;">
+          <input type="text" class="quick-inline-input" value="${escapeHtml(currentVal)}" placeholder="Gõ nghĩa / ghi chú..." style="flex:1; font-size:11.5px; padding:2px 6px; background:#0b0f19; border:1px solid #6366f1; border-radius:4px; color:#fff; outline:none; height:24px;">
+          <button type="button" class="quick-inline-save" title="Lưu" style="background:#6366f1; border:none; border-radius:3px; color:#fff; font-size:10px; padding:2px 6px; cursor:pointer; font-weight:600; height:24px;">Lưu</button>
+        </div>
+      `;
+
+      const input = wrap.querySelector('.quick-inline-input');
+      const saveBtn = wrap.querySelector('.quick-inline-save');
+      input.focus();
+      input.select();
+
+      let isFinished = false;
+      const saveNote = async () => {
+        if (isFinished) return;
+        isFinished = true;
+        const newText = input.value.trim();
+        const storage = await chrome.storage.local.get(['vocabularies']);
+        const list = storage.vocabularies || [];
+        const itemObj = list.find(x => x.id === id);
+        if (itemObj) {
+          itemObj.vietnameseMeaning = newText;
+          itemObj.lastReviewed = new Date().toISOString();
+          await chrome.storage.local.set({ vocabularies: list });
+        }
+        await loadAndRender();
+      };
+
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          saveNote();
+        } else if (e.key === 'Escape') {
+          isFinished = true;
+          loadAndRender();
+        }
+      });
+
+      saveBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        saveNote();
+      });
+    }
+
+    // Attach inline edit listeners
+    recentList.querySelectorAll('.item-meaning').forEach(span => {
+      span.addEventListener('click', (e) => {
+        e.stopPropagation();
+        startEditMeaning(span.getAttribute('data-id'));
+      });
+    });
+
+    recentList.querySelectorAll('.btn-edit-note').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        startEditMeaning(btn.getAttribute('data-id'));
+      });
+    });
 
     // Attach speak listeners
     recentList.querySelectorAll('.btn-speak').forEach(btn => {

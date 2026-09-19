@@ -37,13 +37,17 @@ create index idx_vocab_user_status on public.vocabularies (user_id, status);
 create index idx_vocab_user_updated on public.vocabularies (user_id, updated_at desc);
 
 -- Tự động cập nhật `updated_at` mỗi khi bản ghi thay đổi
-create or replace function update_updated_at_column()
-returns trigger as $$
+create or replace function public.update_updated_at_column()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
 begin
     new.updated_at = timezone('utc'::text, now());
     return new;
 end;
-$$ language plpgsql;
+$$;
 
 create trigger trigger_vocab_updated_at
     before update on public.vocabularies
@@ -81,6 +85,11 @@ create policy "Users can update their own vocabularies"
 create policy "Users can delete their own vocabularies"
     on public.vocabularies for delete
     using (auth.uid() = user_id);
+
+-- Cấp quyền truy cập schema và bảng cho các role Supabase (Bắt buộc cho PostgREST)
+grant usage on schema public to anon, authenticated;
+grant all on table public.vocabularies to authenticated;
+grant select on table public.vocabularies to anon;
 ```
 
 ---
