@@ -12,6 +12,23 @@ document.addEventListener('DOMContentLoaded', async () => {
   const quickMeaningInput = document.getElementById('quick-meaning');
   const btnOpenDashboard = document.getElementById('btn-open-dashboard');
   const btnOpenDashboardTop = document.getElementById('btn-open-dashboard-top');
+  const btnToggleEnDetail = document.getElementById('btn-toggle-en-detail');
+
+  // Load user preference for showing English detail
+  let showEnDetail = true;
+  const pref = await chrome.storage.local.get(['showEnDetail']);
+  if (pref.showEnDetail !== undefined) {
+    showEnDetail = pref.showEnDetail;
+  }
+  if (btnToggleEnDetail) {
+    btnToggleEnDetail.classList.toggle('active', showEnDetail);
+    btnToggleEnDetail.addEventListener('click', async () => {
+      showEnDetail = !showEnDetail;
+      btnToggleEnDetail.classList.toggle('active', showEnDetail);
+      await chrome.storage.local.set({ showEnDetail });
+      await loadAndRender();
+    });
+  }
 
   // Load and render data
   await loadAndRender();
@@ -96,6 +113,9 @@ document.addEventListener('DOMContentLoaded', async () => {
           const list = curStorage.vocabularies || [];
           const idx = list.findIndex(v => v.id === entryId);
           if (idx !== -1) {
+            if (!list[idx].vietnameseMeaning && response.details.vietnameseMeaning) {
+              list[idx].vietnameseMeaning = response.details.vietnameseMeaning;
+            }
             list[idx].phonetic = response.details.phonetic || list[idx].phonetic;
             list[idx].audioUrl = response.details.audioUrl || list[idx].audioUrl;
             list[idx].partOfSpeech = response.details.partOfSpeech || list[idx].partOfSpeech;
@@ -149,8 +169,14 @@ document.addEventListener('DOMContentLoaded', async () => {
             ${item.phonetic ? `<span class="item-phonetic">${escapeHtml(item.phonetic)}</span>` : ''}
           </div>
           <div class="item-meaning-wrap">
-            <span class="item-meaning" data-id="${item.id}" title="Nhấp vào đây để thêm hoặc sửa nhanh nghĩa/ghi chú">${escapeHtml(item.vietnameseMeaning || item.englishMeaning || 'Chưa có nghĩa (Click để thêm)')}</span>
+            <span class="item-meaning" data-id="${item.id}" title="Nhấp vào đây để sửa nhanh nghĩa tiếng Việt / ghi chú">${escapeHtml(item.vietnameseMeaning || 'Chưa có nghĩa tiếng Việt (Click để sửa)')}</span>
           </div>
+          ${showEnDetail && item.englishMeaning ? `
+            <div class="item-en-detail" title="${escapeHtml(item.englishMeaning)}">
+              <span class="en-tag">EN</span>
+              <span class="en-text">${escapeHtml(item.englishMeaning)}</span>
+            </div>
+          ` : ''}
         </div>
         <div class="item-actions">
           <button class="item-btn btn-edit-note" title="Sửa nhanh ghi chú" data-id="${item.id}">

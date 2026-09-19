@@ -11,7 +11,9 @@
     "scripting"
   ],
   "host_permissions": [
+    "https://translate.googleapis.com/*",
     "https://api.dictionaryapi.dev/*",
+    "https://*.supabase.co/*",
     "<all_urls>"
   ],
   "background": {

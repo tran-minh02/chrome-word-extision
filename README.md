@@ -90,21 +90,34 @@ Có 3 cách đơn giản để mở bảng quản lý từ vựng:
 
 ## 📂 Cấu Trúc Thư Mục Dự Án
 
-```
-chrome-word-extision/
+```text
+eng-extension/
 ├── manifest.json              # Khai báo cấu hình Extension (Manifest V3)
-├── background.js              # Service Worker: xử lý Context Menu, tra cứu API, lưu trữ
+├── background.js              # Service Worker: Context Menu, tra cứu API, lưu trữ ngầm
 ├── content.js                 # Content Script: trích xuất câu ngữ cảnh trên trang web
 ├── popup/                     # Giao diện Popup khi bấm icon extension
-│   ├── popup.html             # Cấu trúc HTML cửa sổ popup
+│   ├── popup.html             # Cấu trúc HTML popup
 │   ├── popup.css              # Giao diện popup hiện đại
-│   └── popup.js               # Thống kê nhanh, form thêm từ nhanh
-├── dashboard/                 # Trang Bảng quản lý từ vựng chính
+│   └── popup.js               # Thống kê, thêm từ nhanh, sửa nhanh ghi chú, toggle EN
+├── dashboard/                 # Trang Bảng quản lý từ vựng chính (Full tab)
 │   ├── dashboard.html         # Giao diện Dashboard quản lý dạng bảng
-│   ├── dashboard.css          # Giao diện Glassmorphism / Slate hiện đại, responsive
-│   └── dashboard.js           # Logic bảng: CRUD, phát âm, lọc, xuất/nhập JSON
+│   ├── dashboard.css          # Giao diện Glassmorphism / Dark UI hiện đại
+│   ├── dashboard.js           # CRUD từ vựng, phát âm, lọc, xuất/nhập JSON
+│   └── sync.js                # Module đồng bộ Cloud Supabase + 2FA TOTP (Zero-dependency)
 ├── icons/                     # Bộ biểu tượng extension (16x16, 32x32, 48x48, 128x128)
-├── sample_vocabularies.json   # File dữ liệu từ vựng mẫu để test tính năng
+│   ├── icon16.png
+│   ├── icon32.png
+│   ├── icon48.png
+│   └── icon128.png
+├── docs/                      # Tài liệu kỹ thuật & thiết kế CSDL
+│   ├── database_design.md     # Thiết kế bảng, quan hệ & chính sách RLS Supabase
+│   └── supabase_setup.md      # Hướng dẫn chi tiết kết nối & cấu hình Supabase
+├── scripts/                   # Script hỗ trợ phát triển
+│   └── generate_icons.js      # Tạo bộ icon PNG tự động
+├── testcase/                  # Dữ liệu mẫu & server test local
+│   ├── sample_vocabularies.json
+│   ├── serve.js
+│   └── test_supabase.js
 ├── CONTRIBUTING.md            # Hướng dẫn đóng góp phát triển dự án
 ├── LICENSE                    # Giấy phép nguồn mở MIT
 └── README.md                  # Tài liệu giới thiệu & hướng dẫn sử dụng
