@@ -12,27 +12,31 @@
 ## 🌟 Tính Năng Nổi Bật
 
 - 🖱️ **Lưu từ 1-Click qua Chuột phải (Context Menu)**:
-  - Chỉ cần bôi đen (highlight) bất kỳ từ hoặc cụm từ tiếng Anh nào trên trang web và click chuột phải -> chọn **"Lưu từ vựng này"**.
-  - Tự động bắt câu/ngữ cảnh (context sentence) của từ trên trang web để giúp ghi nhớ tốt hơn.
-- 📖 **Tự động tra cứu từ điển (Free Dictionary API)**:
-  - Tự động tìm phiên âm quốc tế (IPA) và định nghĩa mẫu tiếng Anh khi bạn lưu từ.
-  - Hoạt động mượt mà kể cả khi offline (sẽ lưu từ và cho phép bổ sung nghĩa sau).
+  - Bôi đen bất kỳ từ hoặc cụm từ tiếng Anh nào trên trang web -> Click chuột phải -> Chọn **"Lưu từ vựng này"**.
+  - Tự động trích xuất câu ngữ cảnh (context sentence) thực tế giúp ghi nhớ sâu và lâu hơn.
+- 📖 **Tra cứu siêu tốc & Song ngữ (Hybrid Dictionary)**:
+  - Kết hợp Google Translate (`dict-chrome-ex` + `gtx`) và Free Dictionary API.
+  - Tự động lấy phiên âm quốc tế (IPA), từ loại, file audio phát âm chuẩn và câu ví dụ.
+  - Tùy chọn hiển thị song song **Nghĩa tiếng Việt** kèm **Định nghĩa chi tiết tiếng Anh**.
 - 📊 **Bảng Quản Lý Từ Vựng Trực Quan (Dashboard Table View)**:
-  - Xem danh sách từ vựng dưới dạng bảng rõ ràng, đẹp mắt với chuẩn màu sắc hiện đại.
-  - Đầy đủ thông tin: *STT, Từ vựng, Phiên âm, Nghĩa tiếng Việt, Câu ví dụ/Ngữ cảnh, Ngày lưu, Trạng thái*.
-  - **Chỉnh sửa trực tiếp (Inline Edit & Modal Edit)**: Nhấp đôi vào ô hoặc bấm nút Sửa để cập nhật từ, nghĩa tiếng Việt, câu ví dụ hoặc chuyển trạng thái (*Đang học / Đã thuộc*).
-- 🔊 **Phát âm chuẩn (Text-to-Speech)**:
-  - Bấm vào biểu tượng loa để nghe giọng đọc phát âm tiếng Anh chuẩn bản xứ thông qua Web Speech API.
-- 💾 **Lưu trữ & Sao lưu JSON linh hoạt**:
-  - Dữ liệu được lưu trữ an toàn trong `chrome.storage.local`.
-  - **Xuất file JSON (Export)**: Tải file `.json` về máy tính bất kỳ lúc nào để lưu trữ cá nhân hoặc chuyển sang thiết bị khác.
-  - **Nhập file JSON (Import)**: Dễ dàng nạp dữ liệu từ file JSON vào extension (hỗ trợ chế độ Gộp thêm hoặc Ghi đè).
-- 🔍 **Tìm kiếm & Lọc thông minh**:
-  - Tìm kiếm tức thì theo từ vựng hoặc nghĩa tiếng Việt.
-  - Lọc theo trạng thái: *Tất cả*, *Đang học (Learning)*, *Đã thuộc (Mastered)*.
-  - Sắp xếp theo ngày lưu mới nhất / cũ nhất hoặc thứ tự bảng chữ cái A-Z.
-- ⚡ **Popup tiện ích nhanh**:
-  - Bấm vào icon extension trên thanh công cụ để xem thống kê nhanh số từ, thêm từ mới nhanh hoặc mở trang Dashboard đầy đủ.
+  - Giao diện Glassmorphism / Dark UI hiện đại, responsive và tinh tế.
+  - Đầy đủ thông tin: *STT, Từ vựng, Phiên âm, Nghĩa tiếng Việt & EN, Câu ví dụ, Ngày lưu, Trạng thái, Thao tác*.
+  - **Inline Editing**: Double-click vào bất kỳ ô nghĩa hoặc ví dụ nào để chỉnh sửa trực tiếp.
+  - **Thao tác hàng loạt (Batch Actions)**: Chọn nhiều từ để chuyển thành *Đang học*, *Đã thuộc* hoặc *Xóa hàng loạt*.
+- ☁️ **Đồng bộ Đám mây 2 Chiều (Two-Way Cloud Sync - Supabase)**:
+  - Đồng bộ mượt mà dữ liệu giữa nhiều trình duyệt (Chrome, Brave, Edge).
+  - **Mô hình 3 trạng thái**: Dữ liệu cục bộ (`☁️↑`), Dữ liệu đã đồng bộ (`☁️✓`), Dữ liệu tải về từ Cloud.
+  - **Thuật toán Last-Write-Wins (LWW)**: So sánh timestamp `updatedAt` để tự động gộp dữ liệu mới nhất, không lo bị ghi đè dữ liệu cũ.
+  - **Xóa 2 chiều chuẩn xác (Tombstone Pattern)**: Xóa từ vựng trên Cloud ngay khi đăng nhập; tự động xóa ở local nếu Cloud đã xóa; chống tuyệt đối hiện tượng "hồi sinh" từ đã xóa.
+- 🔐 **Bảo mật 2 Lớp (TOTP Authenticator)**:
+  - Hỗ trợ mã xác thực 2 bước (Google Authenticator, Microsoft Authenticator, Authy) bằng chuẩn RFC 6238.
+  - Kiến trúc Zero-Dependency (thuần native `fetch`), siêu nhẹ và không phụ thuộc thư viện nặng nề.
+- 🛡️ **Quét Bảo Mật Tự Động (Gitleaks CI/CD)**:
+  - Tích hợp GitHub Actions tự động quét phát hiện lộ lọt API key, token hoặc bí mật mã nguồn mỗi khi `push` hoặc tạo `pull_request`.
+- 🔊 **Phát âm chuẩn (Audio & Web Speech API)**:
+  - Ưu tiên file âm thanh phát âm bản xứ từ từ điển, fallback sang Web Speech API.
+- 💾 **Sao lưu JSON & Nhập liệu linh hoạt**:
+  - Hỗ trợ Xuất/Nhập file JSON để sao lưu ngoại tuyến hoặc di chuyển dữ liệu nhanh chóng.
 
 ---
 
@@ -76,15 +80,10 @@ Có 3 cách đơn giản để mở bảng quản lý từ vựng:
 - **Cách 2**: Nhấp chuột phải vào trang web -> Chọn **"Mở Bảng quản lý từ vựng"**.
 - **Cách 3**: Chuột phải vào biểu tượng Extension trên thanh công cụ -> Chọn **"Tùy chọn" (Options)**.
 
-### 3. Chỉnh sửa và cập nhật từ vựng trong Bảng
-- **Chỉnh sửa nhanh (Modal)**: Bấm vào nút **Sửa (biểu tượng bút chì)** ở dòng tương ứng để cập nhật nghĩa tiếng Việt, câu ví dụ hoặc ghi chú.
-- **Đổi trạng thái**: Bấm trực tiếp vào nhãn trạng thái `Đang học` hoặc `Đã thuộc` để chuyển đổi qua lại.
-- **Nghe phát âm**: Bấm vào nút **Loa âm thanh** bên cạnh từ vựng để nghe đọc.
-- **Xóa từ**: Bấm nút **Thùng rác** để xóa từ khỏi danh sách.
-
-### 4. Sao lưu & Đồng bộ dữ liệu JSON
-- **Xuất dữ liệu**: Bấm nút **"Xuất JSON"** ở thanh công cụ Dashboard để tải về file `vocabulary_backup_YYYY-MM-DD.json`.
-- **Nạp dữ liệu**: Bấm nút **"Nhập JSON"** -> Chọn file JSON từ máy tính. Bạn có thể chọn nhập gộp hoặc nhập từ file mẫu đi kèm `sample_vocabularies.json`.
+### 3. Đồng bộ dữ liệu Đám mây (Supabase Cloud)
+1. Bấm vào nút **"Đồng bộ Cloud"** trên thanh công cụ Dashboard.
+2. Đăng nhập hoặc tạo tài khoản mới (hỗ trợ bật bảo mật 2FA Authenticator).
+3. Bấm **"Đồng bộ dữ liệu ngay"**: Hệ thống sẽ tự động đối soát, cập nhật từ mới, đồng bộ trạng thái học và xóa bỏ các từ đã xóa giữa tất cả thiết bị của bạn.
 
 ---
 
@@ -95,6 +94,10 @@ eng-extension/
 ├── manifest.json              # Khai báo cấu hình Extension (Manifest V3)
 ├── background.js              # Service Worker: Context Menu, tra cứu API, lưu trữ ngầm
 ├── content.js                 # Content Script: trích xuất câu ngữ cảnh trên trang web
+├── .gitleaks.toml             # Cấu hình quét mã nguồn bí mật Gitleaks & Allowlist
+├── .github/
+│   └── workflows/
+│       └── gitleaks.yml       # GitHub Actions CI/CD tự động quét rò rỉ bảo mật
 ├── popup/                     # Giao diện Popup khi bấm icon extension
 │   ├── popup.html             # Cấu trúc HTML popup
 │   ├── popup.css              # Giao diện popup hiện đại
@@ -102,16 +105,19 @@ eng-extension/
 ├── dashboard/                 # Trang Bảng quản lý từ vựng chính (Full tab)
 │   ├── dashboard.html         # Giao diện Dashboard quản lý dạng bảng
 │   ├── dashboard.css          # Giao diện Glassmorphism / Dark UI hiện đại
-│   ├── dashboard.js           # CRUD từ vựng, phát âm, lọc, xuất/nhập JSON
-│   └── sync.js                # Module đồng bộ Cloud Supabase + 2FA TOTP (Zero-dependency)
+│   ├── dashboard.js           # CRUD từ vựng, phát âm, lọc, xuất/nhập JSON, batch actions
+│   └── sync.js                # Module đồng bộ Cloud Supabase 2 chiều + 2FA TOTP (Zero-dependency)
 ├── icons/                     # Bộ biểu tượng extension (16x16, 32x32, 48x48, 128x128)
 │   ├── icon16.png
 │   ├── icon32.png
 │   ├── icon48.png
 │   └── icon128.png
-├── docs/                      # Tài liệu kỹ thuật & thiết kế CSDL
-│   ├── database_design.md     # Thiết kế bảng, quan hệ & chính sách RLS Supabase
-│   └── supabase_setup.md      # Hướng dẫn chi tiết kết nối & cấu hình Supabase
+├── docs/                      # Tài liệu kỹ thuật chuyên sâu
+│   ├── sync_architecture.md   # Kiến trúc đồng bộ 2 chiều, Last-Write-Wins & Tombstone
+│   ├── database_design.md     # Thiết kế bảng CSDL, quan hệ & chính sách RLS Supabase
+│   ├── supabase_setup.md      # Hướng dẫn kích hoạt kết nối & cấu hình Supabase Cloud
+│   ├── security_gitleaks.md   # Hướng dẫn quét bảo mật mã nguồn với Gitleaks
+│   └── distribution_and_packaging.md # Hướng dẫn đóng gói .CRX & cơ chế phân phối
 ├── scripts/                   # Script hỗ trợ phát triển
 │   └── generate_icons.js      # Tạo bộ icon PNG tự động
 ├── testcase/                  # Dữ liệu mẫu & server test local
@@ -120,7 +126,7 @@ eng-extension/
 │   └── test_supabase.js
 ├── CONTRIBUTING.md            # Hướng dẫn đóng góp phát triển dự án
 ├── LICENSE                    # Giấy phép nguồn mở MIT
-└── README.md                  # Tài liệu giới thiệu & hướng dẫn sử dụng
+└── README.md                  # Tài liệu tổng quan dự án
 ```
 
 ---
