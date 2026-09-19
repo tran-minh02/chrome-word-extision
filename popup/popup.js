@@ -62,12 +62,14 @@ document.addEventListener('DOMContentLoaded', async () => {
       const vocabularies = storage.vocabularies || [];
 
       let entryId;
+      const now = new Date().toISOString();
       const existingIdx = vocabularies.findIndex(v => v.word.toLowerCase() === word.toLowerCase());
       if (existingIdx !== -1) {
         if (vietnameseMeaning) {
           vocabularies[existingIdx].vietnameseMeaning = vietnameseMeaning;
         }
-        vocabularies[existingIdx].lastReviewed = new Date().toISOString();
+        vocabularies[existingIdx].lastReviewed = now;
+        vocabularies[existingIdx].updatedAt = now;
         entryId = vocabularies[existingIdx].id;
         // Đưa từ vừa cập nhật lên đầu danh sách để thấy ngay thay đổi
         const [moved] = vocabularies.splice(existingIdx, 1);
@@ -85,7 +87,8 @@ document.addEventListener('DOMContentLoaded', async () => {
           contextSentence: "",
           sourceUrl: "",
           sourceTitle: "Thêm thủ công",
-          dateAdded: new Date().toISOString(),
+          dateAdded: now,
+          updatedAt: now,
           status: "learning",
           tags: []
         };
@@ -123,6 +126,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (!list[idx].contextSentence && response.details.example) {
               list[idx].contextSentence = `Example: ${response.details.example}`;
             }
+            list[idx].updatedAt = new Date().toISOString();
             await chrome.storage.local.set({ vocabularies: list });
             await loadAndRender();
           }
@@ -232,8 +236,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         const list = storage.vocabularies || [];
         const itemObj = list.find(x => x.id === id);
         if (itemObj) {
+          const now = new Date().toISOString();
           itemObj.vietnameseMeaning = newText;
-          itemObj.lastReviewed = new Date().toISOString();
+          itemObj.lastReviewed = now;
+          itemObj.updatedAt = now;
           await chrome.storage.local.set({ vocabularies: list });
         }
         await loadAndRender();
@@ -293,6 +299,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const item = list.find(x => x.id === id);
         if (item) {
           item.status = newStatus;
+          item.updatedAt = new Date().toISOString();
           await chrome.storage.local.set({ vocabularies: list });
           await loadAndRender();
         }
