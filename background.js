@@ -23,51 +23,110 @@ async function updateBadgeCount() {
   }
 }
 
-// 2. Tra cứu thông tin từ vựng qua Free Dictionary API
+// 2. Tra cứu thông tin từ vựng kết hợp: Google Translate (tiếng Việt + chi tiết EN) + Free Dictionary (Anh - Anh)
 async function fetchWordDetails(word) {
   const cleanWord = word.trim().toLowerCase();
+  let vietnameseMeaning = '';
+  let phonetic = '';
+  let audioUrl = '';
+  let englishMeaning = '';
+  let partOfSpeech = '';
+  let example = '';
+
+  // A. Google Translate (Dịch tiếng Việt + Định nghĩa tiếng Anh + Ví dụ + Phiên âm)
+  // Phản hồi siêu tốc (150-250ms), đầy đủ nghĩa tiếng Việt, tiếng Anh và phát âm
   try {
-    const res = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(cleanWord)}`);
-    if (!res.ok) return null;
-    const data = await res.json();
-    if (!Array.isArray(data) || data.length === 0) return null;
-
-    const entry = data[0];
-    let phonetic = entry.phonetic || '';
-    let audioUrl = '';
-
-    if (entry.phonetics && Array.isArray(entry.phonetics)) {
-      for (const p of entry.phonetics) {
-        if (!phonetic && p.text) phonetic = p.text;
-        if (!audioUrl && p.audio) audioUrl = p.audio;
-        if (phonetic && audioUrl) break;
+    const gUrl = `https://translate.googleapis.com/translate_a/single?client=dict-chrome-ex&sl=en&tl=vi&dt=t&dt=bd&dt=md&dt=ss&dt=ex&dt=rm&q=${encodeURIComponent(cleanWord)}`;
+    const res = await fetch(gUrl, { signal: AbortSignal.timeout(2500) });
+    if (res.ok) {
+      const data = await res.json();
+      // 1. Dịch nghĩa tiếng Việt
+      if (data && data[0] && Array.isArray(data[0])) {
+        vietnameseMeaning = data[0].map(item => item[0]).filter(Boolean).join('').trim();
+        // Phiên âm từ dt=rm (nằm ở data[0][1][3])
+        if (data[0][1] && data[0][1][3]) {
+          phonetic = data[0][1][3];
+        }
+      }
+      // 2. Định nghĩa chi tiết tiếng Anh từ dt=md (monolingual dictionary)
+      if (data && data[12] && Array.isArray(data[12])) {
+        for (const group of data[12]) {
+          if (!partOfSpeech && group[0]) partOfSpeech = group[0];
+          const defs = group[1] || [];
+          if (defs[0] && defs[0][0]) {
+            englishMeaning = defs[0][0];
+            if (defs[0][2]) example = defs[0][2];
+            break;
+          }
+        }
+      }
+      // 3. Ví dụ từ dt=ex nếu chưa có
+      if (!example && data && data[13] && Array.isArray(data[13])) {
+        if (data[13][0] && data[13][0][0]) {
+          example = data[13][0][0].replace(/<\/?b>/g, '');
+        }
       }
     }
-
-    let englishMeaning = '';
-    let partOfSpeech = '';
-    let example = '';
-
-    if (entry.meanings && entry.meanings.length > 0) {
-      const firstMeaning = entry.meanings[0];
-      partOfSpeech = firstMeaning.partOfSpeech || '';
-      if (firstMeaning.definitions && firstMeaning.definitions.length > 0) {
-        englishMeaning = firstMeaning.definitions[0].definition || '';
-        example = firstMeaning.definitions[0].example || '';
+  } catch (_) {
+    // Fallback gtx nếu dict-chrome-ex gặp lỗi kết nối
+    try {
+      const fallbackUrl = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=vi&dt=t&q=${encodeURIComponent(cleanWord)}`;
+      const fbRes = await fetch(fallbackUrl, { signal: AbortSignal.timeout(2000) });
+      if (fbRes.ok) {
+        const fbData = await fbRes.json();
+        if (fbData && fbData[0]) {
+          vietnameseMeaning = fbData[0].map(item => item[0]).filter(Boolean).join('').trim();
+        }
       }
-    }
-
-    return {
-      phonetic,
-      audioUrl,
-      englishMeaning,
-      partOfSpeech,
-      example
-    };
-  } catch (e) {
-    console.warn("Không thể tra cứu online cho từ:", cleanWord, e);
-    return null;
+    } catch (e) {}
   }
+
+  // B. Free Dictionary API: Chỉ tra cứu bổ sung khi thiếu phonetic hoặc audio, với timeout nghiêm ngặt 600ms
+  if (!phonetic || !englishMeaning) {
+    try {
+      const res = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(cleanWord)}`, {
+        signal: AbortSignal.timeout(600)
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data) && data.length > 0) {
+          const entry = data[0];
+          if (!phonetic && entry.phonetic) phonetic = entry.phonetic;
+          if (entry.phonetics && Array.isArray(entry.phonetics)) {
+            for (const p of entry.phonetics) {
+              if (!phonetic && p.text) phonetic = p.text;
+              if (!audioUrl && p.audio) {
+                audioUrl = p.audio;
+                break;
+              }
+            }
+          }
+          if (entry.meanings && entry.meanings.length > 0) {
+            const first = entry.meanings[0];
+            if (!partOfSpeech && first.partOfSpeech) partOfSpeech = first.partOfSpeech;
+            if (!englishMeaning && first.definitions && first.definitions.length > 0) {
+              englishMeaning = first.definitions[0].definition || '';
+              if (!example) example = first.definitions[0].example || '';
+            }
+          }
+        }
+      }
+    } catch (_) {}
+  }
+
+  // Audio phát âm chuẩn từ Google TTS nếu chưa có audio
+  if (!audioUrl) {
+    audioUrl = `https://translate.googleapis.com/translate_tts?client=dict-chrome-ex&tl=en&q=${encodeURIComponent(cleanWord)}`;
+  }
+
+  return {
+    vietnameseMeaning,
+    phonetic,
+    audioUrl,
+    englishMeaning,
+    partOfSpeech,
+    example
+  };
 }
 
 // 3. Xử lý sự kiện click Chuột phải (Context Menu) - Tối ưu hóa siêu tốc (Instant Feedback)
@@ -154,10 +213,11 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
       const currentList = currentStorage.vocabularies || [];
       const itemIndex = currentList.findIndex(v => v.id === newEntryId);
       if (itemIndex !== -1) {
+        currentList[itemIndex].vietnameseMeaning = details.vietnameseMeaning || currentList[itemIndex].vietnameseMeaning;
+        currentList[itemIndex].englishMeaning = details.englishMeaning || currentList[itemIndex].englishMeaning;
         currentList[itemIndex].phonetic = details.phonetic || currentList[itemIndex].phonetic;
         currentList[itemIndex].audioUrl = details.audioUrl || currentList[itemIndex].audioUrl;
         currentList[itemIndex].partOfSpeech = details.partOfSpeech || currentList[itemIndex].partOfSpeech;
-        currentList[itemIndex].englishMeaning = details.englishMeaning || currentList[itemIndex].englishMeaning;
         if (!currentList[itemIndex].contextSentence || currentList[itemIndex].contextSentence === selectedText) {
           if (details.example) currentList[itemIndex].contextSentence = `Example: ${details.example}`;
         }
@@ -173,9 +233,9 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     updateBadgeCount();
     sendResponse({ success: true });
   } else if (request.action === "fetchDetails") {
-    fetchWordDetails(request.word).then(details => {
-      sendResponse({ details });
-    });
+    fetchWordDetails(request.word)
+      .then(details => sendResponse({ details }))
+      .catch(() => sendResponse({ details: null }));
     return true; // async response
   } else if (request.action === "openDashboard") {
     chrome.runtime.openOptionsPage();

@@ -71,8 +71,14 @@
     <!-- Danh sách từ gần đây -->
     <section class="recent-section">
       <div class="section-header">
-        <span class="section-title">Từ đã lưu gần đây</span>
-        <span id="recent-count" class="badge">0</span>
+        <div class="section-title-wrap">
+          <span class="section-title">Từ đã lưu gần đây</span>
+          <span id="recent-count" class="badge">0</span>
+        </div>
+        <button type="button" id="btn-toggle-en-detail" class="btn-toggle-en active" title="Bật/tắt hiển thị định nghĩa chi tiết tiếng Anh">
+          <span class="en-toggle-dot"></span>
+          <span>Chi tiết EN</span>
+        </button>
       </div>
       <div id="recent-list" class="recent-list">
         <!-- Render bằng JS -->
