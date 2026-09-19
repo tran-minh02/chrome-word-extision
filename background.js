@@ -173,9 +173,9 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     updateBadgeCount();
     sendResponse({ success: true });
   } else if (request.action === "fetchDetails") {
-    fetchWordDetails(request.word).then(details => {
-      sendResponse({ details });
-    });
+    fetchWordDetails(request.word)
+      .then(details => sendResponse({ details }))
+      .catch(() => sendResponse({ details: null }));
     return true; // async response
   } else if (request.action === "openDashboard") {
     chrome.runtime.openOptionsPage();

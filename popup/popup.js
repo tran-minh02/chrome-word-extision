@@ -36,42 +36,36 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (!word) return;
 
     const btnSubmit = quickAddForm.querySelector('button[type="submit"]');
+    const originalBtnContent = btnSubmit.innerHTML;
     btnSubmit.disabled = true;
-    btnSubmit.style.opacity = '0.7';
 
     try {
-      // Tra cứu chi tiết online
-      let details = null;
-      try {
-        const response = await chrome.runtime.sendMessage({ action: "fetchDetails", word });
-        if (response && response.details) {
-          details = response.details;
-        }
-      } catch (err) {
-        console.warn("Lỗi gọi fetchDetails:", err);
-      }
-
-      // Lưu vào storage
+      // 1. Lưu vào storage ngay lập tức (0ms), không đợi mạng
       const storage = await chrome.storage.local.get(['vocabularies']);
       const vocabularies = storage.vocabularies || [];
 
-      // Check duplicate
+      let entryId;
       const existingIdx = vocabularies.findIndex(v => v.word.toLowerCase() === word.toLowerCase());
       if (existingIdx !== -1) {
         if (vietnameseMeaning) {
           vocabularies[existingIdx].vietnameseMeaning = vietnameseMeaning;
         }
         vocabularies[existingIdx].lastReviewed = new Date().toISOString();
+        entryId = vocabularies[existingIdx].id;
+        // Đưa từ vừa cập nhật lên đầu danh sách để thấy ngay thay đổi
+        const [moved] = vocabularies.splice(existingIdx, 1);
+        vocabularies.unshift(moved);
       } else {
+        entryId = "vocab_" + Date.now() + "_" + Math.random().toString(36).substring(2, 8);
         const newEntry = {
-          id: "vocab_" + Date.now() + "_" + Math.random().toString(36).substring(2, 8),
+          id: entryId,
           word: word,
-          phonetic: details?.phonetic || "",
-          audioUrl: details?.audioUrl || "",
-          partOfSpeech: details?.partOfSpeech || "",
-          englishMeaning: details?.englishMeaning || "",
+          phonetic: "",
+          audioUrl: "",
+          partOfSpeech: "",
+          englishMeaning: "",
           vietnameseMeaning: vietnameseMeaning,
-          contextSentence: details?.example ? `Example: ${details.example}` : "",
+          contextSentence: "",
           sourceUrl: "",
           sourceTitle: "Thêm thủ công",
           dateAdded: new Date().toISOString(),
@@ -87,11 +81,37 @@ document.addEventListener('DOMContentLoaded', async () => {
       quickWordInput.value = '';
       quickMeaningInput.value = '';
       await loadAndRender();
+
+      // Phản hồi trực quan trên nút
+      btnSubmit.innerHTML = '<span>✓ Đã lưu!</span>';
+      setTimeout(() => {
+        btnSubmit.innerHTML = originalBtnContent;
+        btnSubmit.disabled = false;
+      }, 1000);
+
+      // 2. Tra cứu chi tiết online ngầm (không chặn giao diện)
+      chrome.runtime.sendMessage({ action: "fetchDetails", word }, async (response) => {
+        if (response && response.details) {
+          const curStorage = await chrome.storage.local.get(['vocabularies']);
+          const list = curStorage.vocabularies || [];
+          const idx = list.findIndex(v => v.id === entryId);
+          if (idx !== -1) {
+            list[idx].phonetic = response.details.phonetic || list[idx].phonetic;
+            list[idx].audioUrl = response.details.audioUrl || list[idx].audioUrl;
+            list[idx].partOfSpeech = response.details.partOfSpeech || list[idx].partOfSpeech;
+            list[idx].englishMeaning = response.details.englishMeaning || list[idx].englishMeaning;
+            if (!list[idx].contextSentence && response.details.example) {
+              list[idx].contextSentence = `Example: ${response.details.example}`;
+            }
+            await chrome.storage.local.set({ vocabularies: list });
+            await loadAndRender();
+          }
+        }
+      });
     } catch (err) {
       console.error("Lỗi khi thêm từ:", err);
-    } finally {
       btnSubmit.disabled = false;
-      btnSubmit.style.opacity = '1';
+      btnSubmit.innerHTML = originalBtnContent;
     }
   });
 
