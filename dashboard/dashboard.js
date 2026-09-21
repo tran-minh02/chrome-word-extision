@@ -699,7 +699,7 @@
           <td class="text-muted">${index + 1}</td>
           <td>
             <div class="cell-word-box">
-              <span class="word-text">${escapeHtml(item.word)}</span>
+              <span class="word-text" title="${escapeHtml(item.word)}">${escapeHtml(item.word)}</span>
               ${item.syncedWithCloud 
                 ? `<span class="sync-status-indicator sync-cloud" title="Đã đồng bộ với Cloud">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
@@ -728,7 +728,7 @@
           </td>
           <td>
             <div class="cell-meaning-box">
-              <div class="editable-cell ${!item.vietnameseMeaning ? 'is-empty' : ''}" data-field="vietnameseMeaning" data-id="${item.id}" title="Click đúp để chỉnh sửa nhanh nghĩa tiếng Việt">
+              <div class="editable-cell ${!item.vietnameseMeaning ? 'is-empty' : ''}" data-field="vietnameseMeaning" data-id="${item.id}" title="${escapeHtml(item.vietnameseMeaning || '')} (Click đúp để sửa)">
                 ${escapeHtml(item.vietnameseMeaning || 'Chưa có nghĩa tiếng Việt (Click đúp để sửa)')}
               </div>
               ${showDashboardEn && item.englishMeaning ? `

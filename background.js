@@ -1,12 +1,18 @@
 // English Vocabulary Saver - Background Service Worker (Manifest V3)
 
 // 1. Khởi tạo Context Menu và Badge khi cài đặt hoặc khởi động
-chrome.runtime.onInstalled.addListener(() => {
-  chrome.contextMenus.create({
-    id: "save-english-vocab",
-    title: 'Lưu từ vựng: "%s"',
-    contexts: ["selection"]
+function setupContextMenus() {
+  chrome.contextMenus.removeAll(() => {
+    chrome.contextMenus.create({
+      id: "save-vocab",
+      title: 'Save: "%s"',
+      contexts: ["selection"]
+    });
   });
+}
+
+chrome.runtime.onInstalled.addListener(() => {
+  setupContextMenus();
   updateBadgeCount();
 });
 
@@ -81,8 +87,8 @@ async function fetchWordDetails(word) {
     } catch (e) {}
   }
 
-  // B. Free Dictionary API: Chỉ tra cứu bổ sung khi thiếu phonetic hoặc audio, với timeout nghiêm ngặt 600ms
-  if (!phonetic || !englishMeaning) {
+  // B. Free Dictionary API: Chỉ tra cứu cho từ đơn (bỏ qua khi dịch cả cụm/đoạn văn)
+  if (!cleanWord.includes(' ') && (!phonetic || !englishMeaning)) {
     try {
       const res = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(cleanWord)}`, {
         signal: AbortSignal.timeout(600)
@@ -129,11 +135,23 @@ async function fetchWordDetails(word) {
   };
 }
 
-// 3. Xử lý sự kiện click Chuột phải (Context Menu) - Tối ưu hóa siêu tốc (Instant Feedback)
+// 3. Xử lý sự kiện click Chuột phải (Context Menu) - Chỉ 1 mục Save duy nhất (tối đa 50 từ)
 chrome.contextMenus.onClicked.addListener(async (info, tab) => {
-  if (info.menuItemId === "save-english-vocab") {
-    const selectedText = (info.selectionText || "").trim();
-    if (!selectedText) return;
+  const selectedText = (info.selectionText || "").trim();
+  if (!selectedText) return;
+  const wordCount = selectedText.split(/\s+/).filter(Boolean).length;
+
+  if (info.menuItemId === "save-vocab" || info.menuItemId === "save-english-vocab") {
+    if (wordCount > 50) {
+      chrome.notifications.create({
+        type: "basic",
+        iconUrl: "icons/icon128.png",
+        title: "Lưu: Vượt quá giới hạn",
+        message: "Chỉ cho phép lưu tối đa 50 từ vào danh sách từ vựng.",
+        priority: 1
+      });
+      return;
+    }
 
     // Lấy câu ngữ cảnh với timeout 100ms (tránh bị treo/chờ trên trang PDF hoặc trang đặc biệt)
     let contextSentence = selectedText;
@@ -226,6 +244,16 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
         }
         currentList[itemIndex].updatedAt = new Date().toISOString();
         await chrome.storage.local.set({ vocabularies: currentList });
+
+        if (details.vietnameseMeaning) {
+          chrome.notifications.create({
+            type: "basic",
+            iconUrl: "icons/icon128.png",
+            title: `Bản dịch: "${selectedText.length > 25 ? selectedText.slice(0, 25) + '...' : selectedText}"`,
+            message: details.vietnameseMeaning,
+            priority: 1
+          });
+        }
       }
     }).catch(err => console.warn("Lỗi background fetch details:", err));
   }

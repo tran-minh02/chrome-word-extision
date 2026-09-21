@@ -45,19 +45,24 @@ document.addEventListener('DOMContentLoaded', async () => {
   btnOpenDashboard.addEventListener('click', openDashboard);
   btnOpenDashboardTop.addEventListener('click', openDashboard);
 
-  // Handle quick add form
+  // Handle quick add form (1 dòng, áp dụng như 1 từ được save)
   quickAddForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     const word = quickWordInput.value.trim();
-    const vietnameseMeaning = quickMeaningInput.value.trim();
     if (!word) return;
+
+    const words = word.split(/\s+/).filter(Boolean);
+    if (words.length > 50) {
+      alert("Chỉ cho phép thêm tối đa 50 từ.");
+      return;
+    }
 
     const btnSubmit = quickAddForm.querySelector('button[type="submit"]');
     const originalBtnContent = btnSubmit.innerHTML;
     btnSubmit.disabled = true;
 
     try {
-      // 1. Lưu vào storage ngay lập tức (0ms), không đợi mạng
+      // 1. Lưu vào storage ngay lập tức (0ms) ở trạng thái learning
       const storage = await chrome.storage.local.get(['vocabularies']);
       const vocabularies = storage.vocabularies || [];
 
@@ -65,13 +70,10 @@ document.addEventListener('DOMContentLoaded', async () => {
       const now = new Date().toISOString();
       const existingIdx = vocabularies.findIndex(v => v.word.toLowerCase() === word.toLowerCase());
       if (existingIdx !== -1) {
-        if (vietnameseMeaning) {
-          vocabularies[existingIdx].vietnameseMeaning = vietnameseMeaning;
-        }
+        vocabularies[existingIdx].status = 'learning';
         vocabularies[existingIdx].lastReviewed = now;
         vocabularies[existingIdx].updatedAt = now;
         entryId = vocabularies[existingIdx].id;
-        // Đưa từ vừa cập nhật lên đầu danh sách để thấy ngay thay đổi
         const [moved] = vocabularies.splice(existingIdx, 1);
         vocabularies.unshift(moved);
       } else {
@@ -83,10 +85,10 @@ document.addEventListener('DOMContentLoaded', async () => {
           audioUrl: "",
           partOfSpeech: "",
           englishMeaning: "",
-          vietnameseMeaning: vietnameseMeaning,
+          vietnameseMeaning: "",
           contextSentence: "",
           sourceUrl: "",
-          sourceTitle: "Thêm thủ công",
+          sourceTitle: "Thêm từ popup",
           dateAdded: now,
           updatedAt: now,
           status: "learning",
@@ -96,20 +98,21 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
 
       await chrome.storage.local.set({ vocabularies });
-      chrome.runtime.sendMessage({ action: "updateBadge" });
+      if (chrome.runtime?.id && chrome.runtime.sendMessage) {
+        chrome.runtime.sendMessage({ action: "updateBadge" }).catch(() => {});
+      }
 
       quickWordInput.value = '';
-      quickMeaningInput.value = '';
       await loadAndRender();
 
       // Phản hồi trực quan trên nút
-      btnSubmit.innerHTML = '<span>✓ Đã lưu!</span>';
+      btnSubmit.innerHTML = '<span>✓ Đã thêm!</span>';
       setTimeout(() => {
         btnSubmit.innerHTML = originalBtnContent;
         btnSubmit.disabled = false;
       }, 1000);
 
-      // 2. Tra cứu chi tiết online ngầm (không chặn giao diện)
+      // 2. Tra cứu chi tiết online ngầm (tự động dịch tiếng Việt, phiên âm, audio như khi Save từ web)
       chrome.runtime.sendMessage({ action: "fetchDetails", word }, async (response) => {
         if (response && response.details) {
           const curStorage = await chrome.storage.local.get(['vocabularies']);
@@ -139,6 +142,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   });
 
+
   // Load and render function
   async function loadAndRender() {
     const storage = await chrome.storage.local.get(['vocabularies']);
@@ -149,17 +153,19 @@ document.addEventListener('DOMContentLoaded', async () => {
     const learning = list.filter(item => item.status === 'learning').length;
     const mastered = list.filter(item => item.status === 'mastered').length;
 
-    statTotal.textContent = total;
-    statLearning.textContent = learning;
-    statMastered.textContent = mastered;
-    recentCount.textContent = list.slice(0, 4).length;
+    if (statTotal) statTotal.textContent = total;
+    if (statLearning) statLearning.textContent = learning;
+    if (statMastered) statMastered.textContent = mastered;
+    // Chỉ lấy các từ đang học (chưa thuộc)
+    const learningList = list.filter(item => item.status !== 'mastered');
+    if (recentCount) recentCount.textContent = learningList.slice(0, 4).length;
 
-    // Render recent items
-    const recents = list.slice(0, 4);
+    // Render 4 từ đang học mới nhất (khi đánh dấu đã thuộc sẽ biến mất và tự bù từ cũ hơn vào)
+    const recents = learningList.slice(0, 4);
     if (recents.length === 0) {
       recentList.innerHTML = `
         <div class="empty-state">
-          <p>Chưa có từ vựng nào. Hãy bôi đen từ trên web và click chuột phải để lưu!</p>
+          <p>${list.length > 0 ? '🎉 Tuyệt vời! Bạn đã thuộc hết các từ vựng.' : 'Chưa có từ vựng nào. Hãy bôi đen từ trên web & click chuột phải để lưu!'}</p>
         </div>
       `;
       return;
