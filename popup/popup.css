@@ -88,6 +88,12 @@ body {
   color: var(--text-muted);
 }
 
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
 .icon-btn {
   background: transparent;
   border: 1px solid var(--border);
@@ -227,15 +233,15 @@ body {
   font-weight: 600;
 }
 
-/* Quick Add Form */
-.quick-add-form {
+/* Quick Add Form (1 row) */
+.quick-add-row-form {
   display: flex;
-  flex-direction: column;
+  align-items: center;
   gap: 8px;
 }
 
-.input-group input {
-  width: 100%;
+.quick-add-row-form input {
+  flex: 1;
   padding: 8px 12px;
   background-color: var(--bg-card);
   border: 1px solid var(--border);
@@ -243,36 +249,39 @@ body {
   color: var(--text-main);
   font-size: 13px;
   outline: none;
+  height: 36px;
   transition: border-color 0.2s;
 }
 
-.input-group input:focus {
+.quick-add-row-form input:focus {
   border-color: var(--primary);
 }
 
-.btn-primary {
+.btn-primary-inline {
   background: linear-gradient(135deg, var(--primary) 0%, #4f46e5 100%);
   color: #fff;
   border: none;
   border-radius: var(--radius-sm);
-  padding: 8px 12px;
+  padding: 0 16px;
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 6px;
+  flex-shrink: 0;
+  height: 36px;
   transition: opacity 0.2s;
 }
 
-.btn-primary:hover {
+.btn-primary-inline:hover {
   opacity: 0.92;
 }
 
-.btn-primary svg {
-  width: 16px;
-  height: 16px;
+.btn-primary-inline svg {
+  width: 14px;
+  height: 14px;
 }
 
 /* Recent List */
@@ -280,7 +289,7 @@ body {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  max-height: 170px;
+  max-height: 230px;
   overflow-y: auto;
   padding-right: 2px;
 }
