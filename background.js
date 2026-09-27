@@ -153,11 +153,12 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
       return;
     }
 
-    // Lấy câu ngữ cảnh với timeout 100ms (tránh bị treo/chờ trên trang PDF hoặc trang đặc biệt)
+    // Lấy câu ngữ cảnh với timeout 120ms (tránh bị treo/chờ trên trang PDF hoặc trang đặc biệt)
     let contextSentence = selectedText;
     if (tab && tab.id) {
       try {
-        const getContextPromise = chrome.tabs.sendMessage(tab.id, { action: "getContextSentence" })
+        const msgOptions = (info && typeof info.frameId === 'number') ? { frameId: info.frameId } : {};
+        const getContextPromise = chrome.tabs.sendMessage(tab.id, { action: "getContextSentence" }, msgOptions)
           .then(res => res?.sentence?.trim() || selectedText)
           .catch(() => selectedText);
 

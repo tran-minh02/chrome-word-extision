@@ -777,6 +777,16 @@
 
   // Attach Table Event Listeners
   function attachTableListeners() {
+    // Expand/collapse word text on click
+    tableBody.querySelectorAll('.word-text').forEach(wordEl => {
+      wordEl.addEventListener('click', (e) => {
+        const box = wordEl.closest('.cell-word-box');
+        if (box) {
+          box.classList.toggle('is-expanded');
+        }
+      });
+    });
+
     // Checkboxes
     tableBody.querySelectorAll('.row-checkbox').forEach(cb => {
       cb.addEventListener('change', (e) => {

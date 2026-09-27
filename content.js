@@ -111,7 +111,12 @@ document.addEventListener("mouseup", (e) => {
     border: 1px solid rgba(255,255,255,0.1);
   `;
   tooltip.innerHTML = '<span style="color:#94a3b8;font-size:11px;">Đang dịch...</span>';
-  document.body.appendChild(tooltip);
+  const container = document.body || document.documentElement;
+  if (container) {
+    container.appendChild(tooltip);
+  } else {
+    return;
+  }
 
   if (!chrome.runtime?.id) {
     removeTooltip();

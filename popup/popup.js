@@ -171,15 +171,24 @@ document.addEventListener('DOMContentLoaded', async () => {
       return;
     }
 
-    recentList.innerHTML = recents.map(item => `
-      <div class="recent-item" data-id="${item.id}">
+    recentList.innerHTML = recents.map(item => {
+      const isLong = (item.word && item.word.length > 28) || (item.word && item.word.split(/\s+/).length > 4) || (item.vietnameseMeaning && item.vietnameseMeaning.length > 35);
+      return `
+      <div class="recent-item ${isLong ? 'is-expandable' : ''}" data-id="${item.id}">
         <div class="item-left">
-          <div class="item-word-row">
-            <span class="item-word">${escapeHtml(item.word)}</span>
+          <div class="item-word-row" title="Nhấp để xem đầy đủ / thu gọn">
+            <span class="item-word" title="${escapeHtml(item.word)}">${escapeHtml(item.word)}</span>
             ${item.phonetic ? `<span class="item-phonetic">${escapeHtml(item.phonetic)}</span>` : ''}
+            ${isLong ? `
+              <span class="item-expand-icon" title="Nhấp để mở rộng / thu gọn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="6 9 12 15 18 9"></polyline>
+                </svg>
+              </span>
+            ` : ''}
           </div>
           <div class="item-meaning-wrap">
-            <span class="item-meaning" data-id="${item.id}" title="Nhấp vào đây để sửa nhanh nghĩa tiếng Việt / ghi chú">${escapeHtml(item.vietnameseMeaning || 'Chưa có nghĩa tiếng Việt (Click để sửa)')}</span>
+            <span class="item-meaning" data-id="${item.id}" title="${escapeHtml(item.vietnameseMeaning || '')} (Nhấp vào đây để sửa nhanh nghĩa tiếng Việt / ghi chú)">${escapeHtml(item.vietnameseMeaning || 'Chưa có nghĩa tiếng Việt (Click để sửa)')}</span>
           </div>
           ${showEnDetail && item.englishMeaning ? `
             <div class="item-en-detail" title="${escapeHtml(item.englishMeaning)}">
@@ -209,7 +218,7 @@ document.addEventListener('DOMContentLoaded', async () => {
           </button>
         </div>
       </div>
-    `).join('');
+    `}).join('');
 
     // Inline edit handler
     function startEditMeaning(id) {
@@ -266,6 +275,22 @@ document.addEventListener('DOMContentLoaded', async () => {
         saveNote();
       });
     }
+
+    // Attach expand/collapse toggle for rows
+    recentList.querySelectorAll('.recent-item').forEach(itemEl => {
+      itemEl.addEventListener('click', (e) => {
+        // If clicking action buttons, meaning edit input, or meaning span, don't toggle
+        if (
+          e.target.closest('.item-actions') || 
+          e.target.closest('button') || 
+          e.target.closest('input') || 
+          e.target.closest('.item-meaning-wrap')
+        ) {
+          return;
+        }
+        itemEl.classList.toggle('is-expanded');
+      });
+    });
 
     // Attach inline edit listeners
     recentList.querySelectorAll('.item-meaning').forEach(span => {
