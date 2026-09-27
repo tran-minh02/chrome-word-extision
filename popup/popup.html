@@ -67,11 +67,67 @@
       </div>
     </section>
 
-    <!-- Form thêm từ nhanh (1 dòng duy nhất) -->
+    <!-- Khối kết quả tra cứu nhanh (chỉ xem, không lưu) -->
+    <section id="quick-search-section" class="quick-search-section" style="display: none;">
+      <div class="search-result-header">
+        <div class="search-result-title-group">
+          <span id="search-res-word" class="search-result-word"></span>
+          <span id="search-res-phonetic" class="search-result-phonetic"></span>
+          <span id="search-res-pos" class="search-result-pos" style="display: none;"></span>
+          <button type="button" id="search-res-audio" class="item-btn" title="Phát âm" style="display: none;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+              <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+            </svg>
+          </button>
+        </div>
+        <button type="button" id="btn-close-search" class="search-close-btn" title="Đóng tra cứu">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+
+      <div id="search-res-loading" class="search-loading" style="display: none;">
+        <span class="search-spinner"></span>
+        <span>Đang tra cứu API...</span>
+      </div>
+
+      <div id="search-res-body" class="search-result-body">
+        <div id="search-res-vi" class="search-result-vi"></div>
+        <div id="search-res-en-wrap" class="search-result-en" style="display: none;">
+          <span class="en-tag">EN</span>
+          <span id="search-res-en" class="en-text"></span>
+        </div>
+        <div id="search-res-example" class="search-result-example" style="display: none;"></div>
+      </div>
+
+      <div id="search-res-footer" class="search-result-footer" style="display: none;">
+        <span class="search-result-badge-tag">⚡ Tra cứu • Chưa lưu</span>
+        <button type="button" id="btn-save-searched-word" class="btn-save-searched" title="Lưu từ này vào danh sách học">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="12" y1="5" x2="12" y2="19"></line>
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+          </svg>
+          <span>Lưu từ này</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- Form thêm từ & tra cứu nhanh -->
     <section class="quick-add-section">
       <form id="quick-add-form" class="quick-add-row-form">
         <input type="text" id="quick-word" placeholder="Give your word here ..." required autocomplete="off">
-        <button type="submit" id="btn-quick-add" class="btn-primary-inline">
+        <button type="button" id="btn-quick-search" class="btn-search-inline" title="Chỉ tra cứu bằng API (không lưu)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"
+            stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+          <span>Search</span>
+        </button>
+        <button type="submit" id="btn-quick-add" class="btn-primary-inline" title="Lưu vào danh sách từ vựng">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"
             stroke-linejoin="round">
             <line x1="12" y1="5" x2="12" y2="19"></line>

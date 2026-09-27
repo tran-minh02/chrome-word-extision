@@ -42,11 +42,235 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   }
 
-  btnOpenDashboard.addEventListener('click', openDashboard);
-  btnOpenDashboardTop.addEventListener('click', openDashboard);
+  if (btnOpenDashboard) btnOpenDashboard.addEventListener('click', openDashboard);
+  if (btnOpenDashboardTop) btnOpenDashboardTop.addEventListener('click', openDashboard);
+
+  // Quick Search Elements
+  const btnQuickSearch = document.getElementById('btn-quick-search');
+  const quickSearchSection = document.getElementById('quick-search-section');
+  const searchResWord = document.getElementById('search-res-word');
+  const searchResPhonetic = document.getElementById('search-res-phonetic');
+  const searchResPos = document.getElementById('search-res-pos');
+  const searchResAudio = document.getElementById('search-res-audio');
+  const searchResLoading = document.getElementById('search-res-loading');
+  const searchResBody = document.getElementById('search-res-body');
+  const searchResVi = document.getElementById('search-res-vi');
+  const searchResEnWrap = document.getElementById('search-res-en-wrap');
+  const searchResEn = document.getElementById('search-res-en');
+  const searchResExample = document.getElementById('search-res-example');
+  const searchResFooter = document.getElementById('search-res-footer');
+  const btnCloseSearch = document.getElementById('btn-close-search');
+  const btnSaveSearchedWord = document.getElementById('btn-save-searched-word');
+
+  let currentSearchedData = null;
+
+  function closeSearchResult() {
+    if (quickSearchSection) {
+      quickSearchSection.style.display = 'none';
+    }
+    currentSearchedData = null;
+  }
+
+  if (btnCloseSearch) {
+    btnCloseSearch.addEventListener('click', closeSearchResult);
+  }
+
+  // Xử lý tra cứu nhanh (chỉ xem, không lưu vào storage)
+  async function performQuickSearch() {
+    const word = quickWordInput.value.trim();
+    if (!word) {
+      quickWordInput.focus();
+      return;
+    }
+
+    // Hiển thị khung kết quả & loading
+    quickSearchSection.style.display = 'flex';
+    searchResWord.textContent = word;
+    searchResPhonetic.style.display = 'none';
+    searchResPos.style.display = 'none';
+    searchResAudio.style.display = 'none';
+    searchResLoading.style.display = 'flex';
+    searchResBody.style.display = 'none';
+    searchResFooter.style.display = 'none';
+
+    const originalBtnContent = btnQuickSearch.innerHTML;
+    btnQuickSearch.disabled = true;
+    btnQuickSearch.innerHTML = `
+      <span class="search-spinner" style="width:12px;height:12px;border-width:2px;"></span>
+      <span>Tra...</span>
+    `;
+
+    try {
+      chrome.runtime.sendMessage({ action: "fetchDetails", word }, (response) => {
+        btnQuickSearch.disabled = false;
+        btnQuickSearch.innerHTML = originalBtnContent;
+
+        const details = response?.details;
+        searchResLoading.style.display = 'none';
+        searchResBody.style.display = 'flex';
+
+        if (details && (details.vietnameseMeaning || details.englishMeaning || details.phonetic)) {
+          currentSearchedData = { word, details };
+          searchResWord.textContent = word;
+
+          if (details.phonetic) {
+            searchResPhonetic.textContent = details.phonetic;
+            searchResPhonetic.style.display = 'inline';
+          } else {
+            searchResPhonetic.style.display = 'none';
+          }
+
+          if (details.partOfSpeech) {
+            searchResPos.textContent = details.partOfSpeech;
+            searchResPos.style.display = 'inline-block';
+          } else {
+            searchResPos.style.display = 'none';
+          }
+
+          if (details.audioUrl) {
+            searchResAudio.style.display = 'inline-flex';
+            searchResAudio.onclick = (e) => {
+              e.stopPropagation();
+              playPronunciation(word, details.audioUrl);
+            };
+          } else {
+            searchResAudio.style.display = 'none';
+          }
+
+          searchResVi.textContent = details.vietnameseMeaning || '(Không có nghĩa tiếng Việt)';
+
+          if (details.englishMeaning) {
+            searchResEnWrap.style.display = 'flex';
+            searchResEn.textContent = details.englishMeaning;
+          } else {
+            searchResEnWrap.style.display = 'none';
+          }
+
+          if (details.example) {
+            searchResExample.style.display = 'block';
+            searchResExample.textContent = `Ví dụ: ${details.example}`;
+          } else {
+            searchResExample.style.display = 'none';
+          }
+
+          searchResFooter.style.display = 'flex';
+          btnSaveSearchedWord.disabled = false;
+          btnSaveSearchedWord.innerHTML = `
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="12" y1="5" x2="12" y2="19"></line>
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+            <span>Lưu từ này</span>
+          `;
+        } else {
+          currentSearchedData = null;
+          searchResVi.textContent = 'Không tìm thấy định nghĩa cho từ này hoặc mất kết nối.';
+          searchResEnWrap.style.display = 'none';
+          searchResExample.style.display = 'none';
+          searchResFooter.style.display = 'none';
+        }
+
+        quickSearchSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      });
+    } catch (err) {
+      console.error("Lỗi khi tra cứu:", err);
+      btnQuickSearch.disabled = false;
+      btnQuickSearch.innerHTML = originalBtnContent;
+      searchResLoading.style.display = 'none';
+      searchResBody.style.display = 'flex';
+      searchResVi.textContent = 'Có lỗi xảy ra khi gọi API tra cứu.';
+      searchResFooter.style.display = 'none';
+    }
+  }
+
+  if (btnQuickSearch) {
+    btnQuickSearch.addEventListener('click', performQuickSearch);
+  }
+
+  // Hỗ trợ Shift+Enter hoặc Ctrl+Enter để tra cứu nhanh bằng bàn phím
+  if (quickWordInput) {
+    quickWordInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && (e.shiftKey || e.ctrlKey)) {
+        e.preventDefault();
+        performQuickSearch();
+      }
+    });
+  }
+
+  // Xử lý lưu từ ngay từ khung kết quả tra cứu (nếu sau khi tra muốn lưu lại)
+  if (btnSaveSearchedWord) {
+    btnSaveSearchedWord.addEventListener('click', async () => {
+      if (!currentSearchedData) return;
+      const { word, details } = currentSearchedData;
+      btnSaveSearchedWord.disabled = true;
+
+      try {
+        const storage = await chrome.storage.local.get(['vocabularies']);
+        const vocabularies = storage.vocabularies || [];
+        const now = new Date().toISOString();
+        const existingIdx = vocabularies.findIndex(v => v.word.toLowerCase() === word.toLowerCase());
+
+        let entryId;
+        if (existingIdx !== -1) {
+          vocabularies[existingIdx].status = 'learning';
+          vocabularies[existingIdx].lastReviewed = now;
+          vocabularies[existingIdx].updatedAt = now;
+          if (details.vietnameseMeaning && !vocabularies[existingIdx].vietnameseMeaning) {
+            vocabularies[existingIdx].vietnameseMeaning = details.vietnameseMeaning;
+          }
+          if (details.phonetic) vocabularies[existingIdx].phonetic = details.phonetic;
+          if (details.audioUrl) vocabularies[existingIdx].audioUrl = details.audioUrl;
+          if (details.partOfSpeech) vocabularies[existingIdx].partOfSpeech = details.partOfSpeech;
+          if (details.englishMeaning) vocabularies[existingIdx].englishMeaning = details.englishMeaning;
+          if (details.example && !vocabularies[existingIdx].contextSentence) {
+            vocabularies[existingIdx].contextSentence = `Example: ${details.example}`;
+          }
+          entryId = vocabularies[existingIdx].id;
+          const [moved] = vocabularies.splice(existingIdx, 1);
+          vocabularies.unshift(moved);
+        } else {
+          entryId = "vocab_" + Date.now() + "_" + Math.random().toString(36).substring(2, 8);
+          const newEntry = {
+            id: entryId,
+            word: word,
+            phonetic: details.phonetic || "",
+            audioUrl: details.audioUrl || "",
+            partOfSpeech: details.partOfSpeech || "",
+            englishMeaning: details.englishMeaning || "",
+            vietnameseMeaning: details.vietnameseMeaning || "",
+            contextSentence: details.example ? `Example: ${details.example}` : "",
+            sourceUrl: "",
+            sourceTitle: "Thêm từ popup (tra cứu)",
+            dateAdded: now,
+            updatedAt: now,
+            status: "learning",
+            tags: []
+          };
+          vocabularies.unshift(newEntry);
+        }
+
+        await chrome.storage.local.set({ vocabularies });
+        if (chrome.runtime?.id && chrome.runtime.sendMessage) {
+          chrome.runtime.sendMessage({ action: "updateBadge" }).catch(() => {});
+        }
+
+        await loadAndRender();
+
+        btnSaveSearchedWord.innerHTML = '<span>✓ Đã lưu!</span>';
+        setTimeout(() => {
+          closeSearchResult();
+          quickWordInput.value = '';
+        }, 800);
+      } catch (err) {
+        console.error("Lỗi khi lưu từ đã tra cứu:", err);
+        btnSaveSearchedWord.disabled = false;
+      }
+    });
+  }
 
   // Handle quick add form (1 dòng, áp dụng như 1 từ được save)
   quickAddForm.addEventListener('submit', async (e) => {
+    closeSearchResult();
     e.preventDefault();
     const word = quickWordInput.value.trim();
     if (!word) return;
