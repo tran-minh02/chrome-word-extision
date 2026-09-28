@@ -96,8 +96,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const originalBtnContent = btnQuickSearch.innerHTML;
     btnQuickSearch.disabled = true;
     btnQuickSearch.innerHTML = `
-      <span class="search-spinner" style="width:12px;height:12px;border-width:2px;"></span>
-      <span>Tra...</span>
+      <span class="search-spinner" style="width:14px;height:14px;border-width:2px;display:inline-block;"></span>
     `;
 
     try {
@@ -329,8 +328,12 @@ document.addEventListener('DOMContentLoaded', async () => {
       quickWordInput.value = '';
       await loadAndRender();
 
-      // Phản hồi trực quan trên nút
-      btnSubmit.innerHTML = '<span>✓ Đã thêm!</span>';
+      // Phản hồi trực quan trên nút (icon checkmark)
+      btnSubmit.innerHTML = `
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;">
+          <polyline points="20 6 9 17 4 12"></polyline>
+        </svg>
+      `;
       setTimeout(() => {
         btnSubmit.innerHTML = originalBtnContent;
         btnSubmit.disabled = false;

@@ -444,16 +444,14 @@ body {
   border: 1px solid rgba(99, 102, 241, 0.35);
   color: #c7d2fe;
   border-radius: var(--radius-sm);
-  padding: 0 10px;
-  font-size: 12px;
-  font-weight: 600;
+  padding: 0;
+  width: 36px;
+  height: 36px;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 5px;
   flex-shrink: 0;
-  height: 36px;
   transition: all 0.2s ease;
 }
 
@@ -464,8 +462,8 @@ body {
 }
 
 .btn-search-inline svg {
-  width: 13px;
-  height: 13px;
+  width: 16px;
+  height: 16px;
 }
 
 .btn-primary-inline {
@@ -473,16 +471,14 @@ body {
   color: #fff;
   border: none;
   border-radius: var(--radius-sm);
-  padding: 0 12px;
-  font-size: 12px;
-  font-weight: 600;
+  padding: 0;
+  width: 36px;
+  height: 36px;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 5px;
   flex-shrink: 0;
-  height: 36px;
   transition: opacity 0.2s;
 }
 
@@ -491,8 +487,8 @@ body {
 }
 
 .btn-primary-inline svg {
-  width: 13px;
-  height: 13px;
+  width: 16px;
+  height: 16px;
 }
 
 /* Recent List */

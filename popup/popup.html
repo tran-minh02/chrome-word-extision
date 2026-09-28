@@ -119,21 +119,19 @@
     <section class="quick-add-section">
       <form id="quick-add-form" class="quick-add-row-form">
         <input type="text" id="quick-word" placeholder="Give your word here ..." required autocomplete="off">
-        <button type="button" id="btn-quick-search" class="btn-search-inline" title="Chỉ tra cứu bằng API (không lưu)">
+        <button type="button" id="btn-quick-search" class="btn-search-inline" title="Chỉ tra cứu bằng API (không lưu)" aria-label="Tra cứu">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"
             stroke-linejoin="round">
             <circle cx="11" cy="11" r="8"></circle>
             <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
           </svg>
-          <span>Search</span>
         </button>
-        <button type="submit" id="btn-quick-add" class="btn-primary-inline" title="Lưu vào danh sách từ vựng">
+        <button type="submit" id="btn-quick-add" class="btn-primary-inline" title="Lưu vào danh sách từ vựng" aria-label="Thêm từ vựng">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"
             stroke-linejoin="round">
             <line x1="12" y1="5" x2="12" y2="19"></line>
             <line x1="5" y1="12" x2="19" y2="12"></line>
           </svg>
-          <span>Thêm</span>
         </button>
       </form>
     </section>
