@@ -467,6 +467,7 @@ body {
   align-items: center;
   gap: 8px;
   max-width: 220px;
+  transition: max-width 0.2s ease;
 }
 
 .word-text {
@@ -478,6 +479,24 @@ body {
   text-overflow: ellipsis;
   max-width: 170px;
   display: inline-block;
+  cursor: pointer;
+  transition: color 0.15s ease;
+}
+
+.word-text:hover {
+  color: #a5b4fc;
+}
+
+.cell-word-box.is-expanded {
+  max-width: 420px;
+  align-items: flex-start;
+}
+
+.cell-word-box.is-expanded .word-text {
+  white-space: normal;
+  word-break: break-word;
+  max-width: 360px;
+  line-height: 1.4;
 }
 
 .sync-status-indicator {
